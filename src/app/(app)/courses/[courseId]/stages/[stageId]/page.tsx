@@ -2,38 +2,38 @@
 "use client";
 import Link from 'next/link';
 import { notFound, useParams as useNextParams } from 'next/navigation'; // Renamed useParams to useNextParams
-import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage, fetchStageContent } from '@/lib/mock-data';
-import type { Stage, UserProgress } from '@/lib/types';
+import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage, fetchStageContent, XP_PER_LEVEL, getXpForNextLevel } from '@/lib/mock-data';
+import type { Stage, StageCompletionResult } from '@/lib/types';
 import { MarkdownDisplay } from '@/components/core/markdown-display';
 import { CompletionButton } from '@/components/core/completion-button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Home, FileText, FileType, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, FileText, FileType, ChevronRight, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface StagePageProps {
   params: { courseId: string; stageId: string };
 }
 
 export default function StagePage({ params: paramsFromProps }: StagePageProps) {
-  // Use next/navigation's useParams hook directly for client components
   const routeParams = useNextParams() as { courseId: string; stageId: string };
   
-  // If you were intending to use React.use for promise unwrapping (which is more for Server Components or specific suspense patterns)
-  // const params = React.use(Promise.resolve(paramsFromProps)); 
-  // For client components, direct prop access or useParams is typical. We'll use routeParams from useNextParams.
-
   const course = getCourseById(routeParams.courseId);
   const stage = getStageById(routeParams.stageId);
 
   const [stageContent, setStageContent] = useState<string | null>(null);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
-  
-  // State for completion status, initialized and updated for immediate UI feedback
   const [isStageCompleted, setIsStageCompleted] = useState(() => 
     stage ? !!getProgressForStage(mockUser.id, stage.id) : false
   );
+  // State for user's XP and level to update UI instantly
+  const [currentUserXp, setCurrentUserXp] = useState(mockUser.xp);
+  const [currentUserLevel, setCurrentUserLevel] = useState(mockUser.level);
+
+  const { toast } = useToast();
 
   useEffect(() => {
     if (stage) {
@@ -49,10 +49,12 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
           setIsLoadingContent(false);
         });
       
-      // Re-sync completion status if stage or user changes, or on mount
       setIsStageCompleted(!!getProgressForStage(mockUser.id, stage.id));
+      // Sync user's current XP and level on mount/stage change
+      setCurrentUserXp(mockUser.xp);
+      setCurrentUserLevel(mockUser.level);
     }
-  }, [stage]); // mockUser.id is static for this app's context
+  }, [stage]); // mockUser.id is static, but its properties might change
 
   if (!course || !stage || stage.course_id !== course.id) {
     notFound();
@@ -63,9 +65,14 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
   const prevStage = currentIndex > 0 ? courseStages[currentIndex - 1] : null;
   const nextStage = currentIndex < courseStages.length - 1 ? courseStages[currentIndex + 1] : null;
 
-  const handleStageCompletion = (progress: UserProgress) => {
-    if (progress.stage_id === stage.id) {
+  const handleStageCompletion = (result: StageCompletionResult) => {
+    if (result.progress.stage_id === stage.id) {
       setIsStageCompleted(true);
+      // Update local state for immediate UI feedback on XP/Level
+      setCurrentUserXp(mockUser.xp); // mockUser is updated in completeStage
+      setCurrentUserLevel(mockUser.level);
+
+      // No need to repeat the toast here, it's handled in CompletionButton
     }
   };
 
@@ -140,8 +147,16 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
 
       <Card className="shadow-xl overflow-hidden border-border">
         <CardHeader className="bg-muted/50 p-6 border-b border-border">
-          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{stage.title}</CardTitle>
-          <CardDescription className="text-sm pt-1">コース: {course.title} - ステージ {stage.order} ({stage.fileType.toUpperCase()})</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{stage.title}</CardTitle>
+              <CardDescription className="text-sm pt-1">コース: {course.title} - ステージ {stage.order} ({stage.fileType.toUpperCase()})</CardDescription>
+            </div>
+            <Badge variant="outline" className="mt-2 sm:mt-0 text-base px-3 py-1.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
+              <Zap className="mr-2 h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+              {stage.xpAward} XP獲得可能
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="p-6 md:p-8 min-h-[300px] bg-background">
           {renderContent()}
@@ -186,4 +201,3 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
     </div>
   );
 }
-

@@ -7,7 +7,7 @@ import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForSta
 import type { Stage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, FileType, Users, Globe, DollarSign } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, FileType, Users, Globe, DollarSign, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -30,7 +30,7 @@ interface StageMapPageProps {
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
   const params = useNextParams() as { courseId: string };
-  // const params = React.use(Promise.resolve(paramsFromProps)); // Avoid React.use for now due to potential issues
+
 
   const course = getCourseById(params.courseId);
 
@@ -71,10 +71,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
   // Determine map dimensions
   const STAGE_WIDTH = 200;
-  const STAGE_HEIGHT = 80;
+  const STAGE_HEIGHT = 100; // Increased height for XP badge
   const PADDING_X = 50; // Horizontal padding within the SVG
   const PADDING_Y = 50; // Vertical padding within the SVG
-  const ROW_SPACING = STAGE_HEIGHT + 40;
+  const ROW_SPACING = STAGE_HEIGHT + 50; // Increased spacing
   const COL_SPACING = STAGE_WIDTH + 70;
 
   const maxCols = stages.reduce((max, s) => {
@@ -249,7 +249,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                 {course.mode === 'public' ? <Globe className="h-6 w-6 text-blue-600" /> : <Users className="h-6 w-6 text-purple-600" />}
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">{course.title}</h1>
                 {course.mode === 'public' && course.price !== undefined && (
-                  <Badge variant={course.price > 0 ? "destructive" : "default"} className={course.price > 0 ? "bg-accent" : "bg-blue-600"}>
+                  <Badge variant={course.price > 0 ? "destructive" : "default"} className={cn(course.price > 0 ? "bg-accent" : "bg-blue-600", "text-accent-foreground")}>
                      {course.price > 0 ? `¥${course.price.toLocaleString()}` : '無料'}
                   </Badge>
                 )}
@@ -310,21 +310,17 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
                     const dx = x2_center - x1_center;
                     const dy = y2_center - y1_center;
-                    const angle = Math.atan2(dy, dx);
-
-                    const offsetX = Math.cos(angle) * (STAGE_WIDTH / 2 + 2);
-                    const offsetY = Math.sin(angle) * (STAGE_HEIGHT / 2 + 2);
-
+                   
                     if (Math.abs(dx) > Math.abs(dy)) { // More horizontal
                         pathX1 = x1_center + (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
-                        pathY1 = y1_center; // Keep Y at center for horizontal exits
-                        pathX2 = x2_center - (dx > 0 ? STAGE_WIDTH / 2 + markerSize : -(STAGE_WIDTH / 2 + markerSize)); // Adjust for marker
-                        pathY2 = y2_center; // Keep Y at center for horizontal entries
+                        pathY1 = y1_center; 
+                        pathX2 = x2_center - (dx > 0 ? STAGE_WIDTH / 2 + markerSize : -(STAGE_WIDTH / 2 + markerSize)); 
+                        pathY2 = y2_center; 
                     } else { // More vertical
                         pathY1 = y1_center + (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
-                        pathX1 = x1_center; // Keep X at center for vertical exits
-                        pathY2 = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 + markerSize : -(STAGE_HEIGHT / 2 + markerSize)); // Adjust for marker
-                        pathX2 = x2_center; // Keep X at center for vertical entries
+                        pathX1 = x1_center; 
+                        pathY2 = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 + markerSize : -(STAGE_HEIGHT / 2 + markerSize)); 
+                        pathX2 = x2_center; 
                     }
 
                     let ctrlX1 = pathX1;
@@ -381,7 +377,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           )}
                           strokeWidth={strokeWidth}
                           fill="none"
-                          strokeDasharray={isFromCompleted ? "none" : "5,5"}
+                          strokeDasharray={isFromCompleted ? "5,5" : "none"}
                           markerEnd={`url(#${arrowId})`}
                         />
                       </g>
@@ -439,16 +435,19 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                             top: `${stage.position.y}px`,
                             width: `${STAGE_WIDTH}px`,
                             height: `${STAGE_HEIGHT}px`,
-                            zIndex: 10,
+                            zIndex: 10, // Ensure cards are above SVG lines
                           }}
                           aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                         >
-                          <CardContent className="p-2 flex flex-col justify-center items-center h-full">
+                          <CardContent className="p-2 flex flex-col justify-center items-center h-full w-full">
                               {icon}
                               <h3 className="text-xs font-medium leading-tight break-words mt-1">
                                 ステージ {stage.order}: {stage.title}
                               </h3>
                               <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
+                              <Badge variant="outline" className="mt-1.5 text-xs px-1.5 py-0.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
+                                <Zap className="mr-1 h-3 w-3 text-yellow-600 dark:text-yellow-500" /> {stage.xpAward} XP
+                              </Badge>
                           </CardContent>
                         </Card>
                       </DialogTrigger>
@@ -465,18 +464,24 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
         {selectedStageForModal && (
           <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
-              <DialogTitle className="text-2xl">ステージ {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
-              <DialogDescription asChild>
-                <div className="text-sm text-muted-foreground pt-1">
-                   <Badge
+              <div className="flex justify-between items-start">
+                <DialogTitle className="text-2xl">ステージ {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
+                 <Badge
                     variant={modalStatusVariant}
                     className={cn(
-                        "text-xs",
+                        "text-sm capitalize", // Increased text size
                         modalStageIsCompleted && "bg-green-600 hover:bg-green-700 text-primary-foreground",
                         modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
                    >
-                     <span className='capitalize'>{modalStatusText}</span> ({selectedStageForModal.fileType.toUpperCase()})
+                     {modalStatusText}
+                   </Badge>
+              </div>
+              <DialogDescription asChild>
+                <div className="text-sm text-muted-foreground pt-1 flex justify-between items-center">
+                   <span>形式: {selectedStageForModal.fileType.toUpperCase()}</span>
+                   <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
+                     <Zap className="mr-1 h-3 w-3 text-yellow-600 dark:text-yellow-500" /> {selectedStageForModal.xpAward} XP
                    </Badge>
                 </div>
               </DialogDescription>

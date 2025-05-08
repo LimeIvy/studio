@@ -3,18 +3,16 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, ArrowRightCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Zap } from 'lucide-react'; // Zap for XP icon
 import { useToast } from '@/hooks/use-toast';
-import type { UserProgress } from '@/lib/types';
+import type { StageCompletionResult } from '@/lib/types';
 import { completeStage as apiCompleteStage, getProgressForStage } from '@/lib/mock-data'; 
-import { mockUser } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 interface CompletionButtonProps {
   stageId: string;
   userId: string; 
-  onComplete?: (progress: UserProgress) => void;
-  // nextStageId prop removed as it's no longer used for text
+  onComplete?: (result: StageCompletionResult) => void;
   courseId: string;
 }
 
@@ -44,16 +42,23 @@ export function CompletionButton({ stageId, userId, onComplete, courseId }: Comp
     try {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 700));
-      const progress = apiCompleteStage(userId, stageId); 
+      const result = apiCompleteStage(userId, stageId); 
       setIsCompleted(true);
       if (onComplete) {
-        onComplete(progress);
+        onComplete(result);
       }
+
+      let toastDescription = `おめでとうございます！このステージをクリアしました。 ${result.xpAwarded} XP獲得！`;
+      if (result.leveledUp && result.newLevel && result.oldLevel) {
+        toastDescription += ` レベルアップ！ Lv.${result.oldLevel} → Lv.${result.newLevel} 🎉`;
+      }
+
+
       toast({
-        title: "ステージ完了！ 🎉",
-        description: "おめでとうございます！このステージをクリアしました。",
+        title: "ステージ完了！ 🌟",
+        description: toastDescription,
         variant: "default",
-        duration: 5000,
+        duration: 7000, // Longer duration for level up messages
       });
     } catch (error) {
       console.error("ステージ完了マーク付け失敗:", error);
@@ -97,15 +102,13 @@ export function CompletionButton({ stageId, userId, onComplete, courseId }: Comp
         <>
           <CheckCircle2 className="mr-2 h-5 w-5" />
           ステージ完了！
-          {/* Removed the (次へ...) span */}
         </>
       ) : (
         <>
-          <CheckCircle2 className="mr-2 h-5 w-5" />
+          <Zap className="mr-2 h-5 w-5" /> {/* Changed icon for uncompleted state */}
           完了としてマーク
         </>
       )}
     </Button>
   );
 }
-
