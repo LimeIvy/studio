@@ -95,8 +95,8 @@ export const mockCourses: Course[] = [
 const BASE_X = 50;
 const BASE_Y = 50;
 const COL_SPACING = 270; // STAGE_WIDTH (200) + 70
-const ROW_SPACING = 120; // STAGE_HEIGHT (80) + 40
-const STAGES_PER_ROW = 3; // Adjusted for better visual flow
+const ROW_SPACING = 150; // STAGE_HEIGHT (100) + 50; increased from 120 to 150 for more vertical space
+const STAGES_PER_ROW = 3; 
 
 
 const calculatePositions = (stages: Omit<Stage, 'position'>[], courseId: string): Stage[] => {
@@ -113,7 +113,7 @@ const calculatePositions = (stages: Omit<Stage, 'position'>[], courseId: string)
         x: BASE_X + col * COL_SPACING,
         y: BASE_Y + row * ROW_SPACING,
       },
-    } as Stage; // Ensure the return type matches Stage, including xpAward
+    } as Stage; 
   });
 };
 
@@ -251,13 +251,13 @@ const rawStages: Omit<Stage, 'position'>[] = [
     xpAward: 30,
   },
   {
-    id: 'stage-1-14-pdf',
+    id: 'stage-1-14-md',
     course_id: 'course-1',
-    title: 'Unity PDF ガイド',
+    title: 'Unity 最適化ガイド',
     order: 14,
-    fileType: 'pdf',
-    filePath: 'references/unity_optimization_guide.pdf',
-    markdownContent: 'このステージでは、パフォーマンス最適化に関するPDF資料を参照します。実際のファイルは提供されませんが、アプリケーションはPDFファイルを表示する機能を示します。',
+    fileType: 'md',
+    filePath: 'unity/14-optimization-guide.md',
+    markdownContent: '# Unity 最適化ガイド\n\nUnityプロジェクトのパフォーマンスを向上させるための基本的なテクニック。\n\n## プロファイラの使用\n- Unity Profilerを使用してボトルネックを特定します。\n- CPU使用率、GPU使用率、メモリ割り当てなどを確認します。\n\n## ドローコール削減\n- Static Batching: 静的オブジェクトをまとめて描画。\n- Dynamic Batching: 小さな動的オブジェクトをまとめて描画。\n- GPU Instancing: 同じメッシュとマテリアルを多数描画する場合に効果的。\n\n## アセットの最適化\n- テクスチャ: 解像度を適切に設定し、圧縮形式を使用 (Crunch Compressionなど)。\n- モデル: ポリゴン数を削減。LOD (Level of Detail) を使用。\n\n## スクリプトの最適化\n- Update()内の処理を最小限に。\n- GetComponentの呼び出しをキャッシュする。\n- Coroutineや非同期処理を適切に使用する。',
     xpAward: 20,
   },
   {
@@ -271,13 +271,13 @@ const rawStages: Omit<Stage, 'position'>[] = [
     xpAward: 25,
   },
   {
-    id: 'stage-1-16-pdf',
+    id: 'stage-1-16-md',
     course_id: 'course-1',
-    title: 'シェーダーグラフ資料 (PDF)',
+    title: 'シェーダーグラフ入門',
     order: 16,
-    fileType: 'pdf',
-    filePath: 'references/shader_graph_cookbook.pdf',
-    markdownContent: 'Unityのシェーダーグラフに関する詳細なPDF資料です。カスタムシェーダー作成の基礎について解説します。',
+    fileType: 'md',
+    filePath: 'unity/16-shader-graph-intro.md',
+    markdownContent: `# シェーダーグラフ入門\n\nUnityのシェーダーグラフを使用して、コードを書かずにカスタムシェーダーを作成する基本を学びます。\n\n## シェーダーグラフとは\n- ノードベースのインターフェースで視覚的にシェーダーを作成できるツール。\n- PBR (Physically Based Rendering) シェーダーやUnlitシェーダーを作成可能。\n\n## 基本的な使い方\n1. Create > Shader > (PBR Graph / Unlit Graph) で新しいシェーダーグラフアセットを作成。\n2. 作成したシェーダーグラフをダブルクリックしてエディタを開く。\n3. ノードを追加し、接続してシェーダーロジックを構築。\n4. Save Asset をクリックしてシェーダーを保存。\n5. 作成したシェーダーからマテリアルを作成し、オブジェクトに適用。\n\n## ノードの例\n- **Input**: Texture 2D Asset, Color, Vector1/2/3/4 など\n- **Math**: Add, Subtract, Multiply, Lerp など\n- **UV**: Tiling and Offset, Rotate など\n- **Master Node**: シェーダーの最終的な出力を定義 (PBR Master, Unlit Master)`,
     xpAward: 20,
   },
   {
@@ -398,7 +398,16 @@ const rawStages: Omit<Stage, 'position'>[] = [
   { id: 'stage-4-1', course_id: 'course-4', title: 'プロジェクト概要と目標設定', fileType: 'md', filePath: 'ml-project/01-overview.md', markdownContent: '# プロジェクト概要と目標設定\n\nこの機械学習プロジェクトの全体像と達成目標を明確にします。', order: 1, xpAward: 10 },
   { id: 'stage-4-2', course_id: 'course-4', title: 'データ収集と前処理', fileType: 'md', filePath: 'ml-project/02-data-preprocessing.md', markdownContent: '# データ収集と前処理\n\nモデル学習に必要なデータの収集方法と、クリーニング・整形手順を学びます。', order: 2, xpAward: 20 },
   { id: 'stage-4-3', course_id: 'course-4', title: 'モデル選択と基礎理論', fileType: 'md', filePath: 'ml-project/03-model-selection.md', markdownContent: '# モデル選択と基礎理論\n\nプロジェクトに適した機械学習モデルを選択し、その背景理論を理解します。', order: 3, xpAward: 20 },
-  { id: 'stage-4-4', course_id: 'course-4', title: 'モデル学習と評価 (PDF)', fileType: 'pdf', filePath: 'references/ml_training_evaluation.pdf', markdownContent: 'モデルの学習プロセスと、その性能を評価するための指標について解説したPDF資料です。', order: 4, xpAward: 15 },
+  { 
+    id: 'stage-4-4-md', 
+    course_id: 'course-4', 
+    title: 'モデル学習と評価', 
+    fileType: 'md', 
+    filePath: 'ml-project/04-training-evaluation.md', 
+    markdownContent: '# モデル学習と評価\n\n選択したモデルの学習プロセスと、その性能を評価するための主要な指標について解説します。\n\n## 学習プロセス\n- データセットの分割（訓練用、検証用、テスト用）\n- 損失関数と最適化アルゴリズムの選択\n- エポック数、バッチサイズなどの設定\n\n## 評価指標\n- **分類問題**: 正解率、適合率、再現率、F1スコア、混同行列、ROC曲線、AUC\n- **回帰問題**: MSE（平均二乗誤差）、RMSE（二乗平均平方根誤差）、MAE（平均絶対誤差）、R2スコア（決定係数）', 
+    order: 4, 
+    xpAward: 15 
+  },
   { id: 'stage-4-5', course_id: 'course-4', title: 'ハイパーパラメータ調整', fileType: 'md', filePath: 'ml-project/05-hyperparameter-tuning.md', markdownContent: '# ハイパーパラメータ調整\n\nモデルの性能を最大限に引き出すためのハイパーパラメータ調整テクニックを学びます。', order: 5, xpAward: 25 },
   { id: 'stage-4-6', course_id: 'course-4', title: '結果の解釈と報告', fileType: 'md', filePath: 'ml-project/06-results-reporting.md', markdownContent: '# 結果の解釈と報告\n\n学習結果を正しく解釈し、効果的な報告書を作成する方法を身につけます。', order: 6, xpAward: 15 },
   { id: 'stage-4-7', course_id: 'course-4', title: 'デプロイ戦略の検討', fileType: 'md', filePath: 'ml-project/07-deployment-strategy.md', markdownContent: '# デプロイ戦略の検討\n\n完成したモデルを実際の運用環境にデプロイするための戦略を検討します。', order: 7, xpAward: 30 },
@@ -428,10 +437,10 @@ export const mockStageLinks: StageLink[] = [
   { id: 'link-1-10-11', from_stage_id: 'stage-1-10', to_stage_id: 'stage-1-11' },
   { id: 'link-1-11-12', from_stage_id: 'stage-1-11', to_stage_id: 'stage-1-12' },
   { id: 'link-1-12-13', from_stage_id: 'stage-1-12', to_stage_id: 'stage-1-13' },
-  { id: 'link-1-13-14pdf', from_stage_id: 'stage-1-13', to_stage_id: 'stage-1-14-pdf' },
-  { id: 'link-1-14pdf-15', from_stage_id: 'stage-1-14-pdf', to_stage_id: 'stage-1-15' },
-  { id: 'link-1-15-16pdf', from_stage_id: 'stage-1-15', to_stage_id: 'stage-1-16-pdf' },
-  { id: 'link-1-16pdf-17', from_stage_id: 'stage-1-16-pdf', to_stage_id: 'stage-1-17' },
+  { id: 'link-1-13-14md', from_stage_id: 'stage-1-13', to_stage_id: 'stage-1-14-md' },
+  { id: 'link-1-14md-15', from_stage_id: 'stage-1-14-md', to_stage_id: 'stage-1-15' },
+  { id: 'link-1-15-16md', from_stage_id: 'stage-1-15', to_stage_id: 'stage-1-16-md' },
+  { id: 'link-1-16md-17', from_stage_id: 'stage-1-16-md', to_stage_id: 'stage-1-17' },
   { id: 'link-1-17-18', from_stage_id: 'stage-1-17', to_stage_id: 'stage-1-18' },
 
   // Ruby Links
@@ -448,8 +457,8 @@ export const mockStageLinks: StageLink[] = [
   // Machine Learning Project Links
   { id: 'link-4-1-2', from_stage_id: 'stage-4-1', to_stage_id: 'stage-4-2' },
   { id: 'link-4-2-3', from_stage_id: 'stage-4-2', to_stage_id: 'stage-4-3' },
-  { id: 'link-4-3-4pdf', from_stage_id: 'stage-4-3', to_stage_id: 'stage-4-4-pdf' },
-  { id: 'link-4-4pdf-5', from_stage_id: 'stage-4-4-pdf', to_stage_id: 'stage-4-5' },
+  { id: 'link-4-3-4md', from_stage_id: 'stage-4-3', to_stage_id: 'stage-4-4-md' },
+  { id: 'link-4-4md-5', from_stage_id: 'stage-4-4-md', to_stage_id: 'stage-4-5' },
   { id: 'link-4-5-6', from_stage_id: 'stage-4-5', to_stage_id: 'stage-4-6' },
   { id: 'link-4-6-7', from_stage_id: 'stage-4-6', to_stage_id: 'stage-4-7' },
 ];
@@ -594,20 +603,8 @@ export const completeStage = (userId: string, stageId: string): StageCompletionR
 
 // Simulate fetching file content. In a real app, this would involve API calls or file system access.
 export async function fetchStageContent(stage: Stage): Promise<string> {
-  if (stage.fileType === 'md') {
-    // For mock data, we already have markdownContent.
-    // In a real app, you might fetch from stage.filePath here.
-    // e.g., const response = await fetch(`/api/content?path=${stage.filePath}`);
-    // const data = await response.text();
-    // return data;
-    return stage.markdownContent || `Error: Markdown content not found for ${stage.title}`;
-  }
-  if (stage.fileType === 'pdf') {
-    // For PDF, we might return a message or a URL to an embeddable viewer.
-    // For this example, we'll return a simple message or the optional markdownContent if it's a description.
-    return stage.markdownContent || `PDF Document: ${stage.title}. Path: ${stage.filePath}. (PDF viewer would be embedded here).`;
-  }
-  return `Error: Unsupported file type for stage ${stage.title}`;
+  // All stages are now MD
+  return stage.markdownContent || `Error: Markdown content not found for ${stage.title}`;
 }
 
 // Initialize completedStages for courses based on mockUserProgress
@@ -619,3 +616,4 @@ mockCourses.forEach(course => {
   course.completedStages = completedStagesCount;
   course.totalStages = stages.length;
 });
+

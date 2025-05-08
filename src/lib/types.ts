@@ -32,9 +32,9 @@ export interface Stage {
   title: string;
   order: number; // For display order
   position?: { x: number; y: number }; // For React Flow like visualization
-  fileType: 'md' | 'pdf'; // Type of the content file
-  filePath: string; // Path to the content file (e.g., 'docs/introduction.md' or 'slides/chapter1.pdf')
-  markdownContent?: string; // Content for 'md' files, or a brief description if desired for 'pdf'
+  fileType: 'md'; // Type of the content file - ONLY MD NOW
+  filePath: string; // Path to the content file (e.g., 'docs/introduction.md')
+  markdownContent?: string; // Content for 'md' files
   xpAward: number; // XP awarded for completing this stage
 }
 
@@ -72,3 +72,4 @@ export interface StageCompletionResult {
   newLevel?: number;
   oldLevel?: number;
 }
+

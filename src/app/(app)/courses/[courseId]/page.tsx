@@ -7,7 +7,7 @@ import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForSta
 import type { Stage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, FileType, Users, Globe, DollarSign, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, Users, Globe, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -71,10 +71,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
   // Determine map dimensions
   const STAGE_WIDTH = 200;
-  const STAGE_HEIGHT = 100; // Increased height for XP badge
-  const PADDING_X = 50; // Horizontal padding within the SVG
-  const PADDING_Y = 50; // Vertical padding within the SVG
-  const ROW_SPACING = STAGE_HEIGHT + 50; // Increased spacing
+  const STAGE_HEIGHT = 100; 
+  const PADDING_X = 50; 
+  const PADDING_Y = 50; 
+  const ROW_SPACING = STAGE_HEIGHT + 50; 
   const COL_SPACING = STAGE_WIDTH + 70;
 
   const maxCols = stages.reduce((max, s) => {
@@ -187,10 +187,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
           }
           modalButtonDisabled = false;
       } else {
-          modalButtonText = "ステージはロック中";
+          modalButtonText = "ステージはロック中"; // Text when stage is locked
           modalStatusText = "ロック中";
           modalStatusVariant = "outline";
-          modalButtonDisabled = true;
+          modalButtonDisabled = true; // Ensure button is disabled if stage is locked
       }
   }
 
@@ -209,32 +209,11 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
       return <p>コンテンツを読み込めませんでした。</p>;
     }
 
+    // Only MD files are supported now
     if (selectedStageForModal.fileType === 'md') {
       return <MarkdownDisplay content={modalContent} />;
     }
-    if (selectedStageForModal.fileType === 'pdf') {
-      return (
-         <div className="space-y-4">
-          <div className="flex items-center space-x-2 text-lg font-semibold">
-            <FileType className="h-6 w-6 text-primary" />
-            <span>PDFドキュメント: {selectedStageForModal.title}</span>
-          </div>
-          <p className="text-muted-foreground">
-            このステージのコンテンツはPDF形式です。
-            {selectedStageForModal.markdownContent && <span className="block mt-2">概要: {selectedStageForModal.markdownContent}</span>}
-          </p>
-           <Button asChild variant="outline">
-            <a href={`/mock-pdfs/${selectedStageForModal.filePath}`} target="_blank" rel="noopener noreferrer">
-              PDFを開く (新規タブ)
-              <FileText className="ml-2 h-4 w-4" />
-            </a>
-          </Button>
-           <p className="text-xs text-muted-foreground">
-            注意: このリンクは、PDFが `/public/mock-pdfs/` ディレクトリに配置されていることを前提としています。
-          </p>
-        </div>
-      );
-    }
+    
     return <p>不明なファイル形式です。</p>;
   };
 
@@ -331,7 +310,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                     const isSameRow = Math.abs(y1_center - y2_center) < ROW_SPACING / 2;
                     const isSameCol = Math.abs(x1_center - x2_center) < COL_SPACING / 2;
 
-                    const isUnity4to5 = fromStage.id === 'stage-1-4' && toStage.id === 'stage-1-5';
+                    const isUnity4to5 = (fromStage.id === 'stage-1-4' && toStage.id === 'stage-1-5') || (fromStage.id === 'stage-1-5' && toStage.id === 'stage-1-4');
 
 
                     if (isSameRow || isSameCol || isUnity4to5) {
@@ -377,7 +356,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           )}
                           strokeWidth={strokeWidth}
                           fill="none"
-                          strokeDasharray={isFromCompleted ? "5,5" : "none"}
+                          strokeDasharray={isFromCompleted ? "none" : "5,5"} // Changed from "5,5" : "none"
                           markerEnd={`url(#${arrowId})`}
                         />
                       </g>
@@ -415,7 +394,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                       icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
                       statusAriaLabel = '完了';
                     } else if (isAccessible) {
-                      cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg';
+                      cardClass = 'border-primary bg-card hover:shadow-lg'; // Removed bg-primary/10 dark:bg-primary/20
                       icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
                       statusAriaLabel = '学習可能';
                     }
@@ -435,7 +414,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                             top: `${stage.position.y}px`,
                             width: `${STAGE_WIDTH}px`,
                             height: `${STAGE_HEIGHT}px`,
-                            zIndex: 10, // Ensure cards are above SVG lines
+                            zIndex: 10, 
                           }}
                           aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                         >
@@ -444,7 +423,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                               <h3 className="text-xs font-medium leading-tight break-words mt-1">
                                 ステージ {stage.order}: {stage.title}
                               </h3>
-                              <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
+                              {/* Removed fileType display as it's always MD now */}
                               <Badge variant="outline" className="mt-1.5 text-xs px-1.5 py-0.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
                                 <Zap className="mr-1 h-3 w-3 text-yellow-600 dark:text-yellow-500" /> {stage.xpAward} XP
                               </Badge>
@@ -469,7 +448,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                  <Badge
                     variant={modalStatusVariant}
                     className={cn(
-                        "text-sm capitalize", // Increased text size
+                        "text-sm capitalize", 
                         modalStageIsCompleted && "bg-green-600 hover:bg-green-700 text-primary-foreground",
                         modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
@@ -492,10 +471,28 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
             <DialogFooter className="mt-auto pt-4 border-t">
               <Button variant="outline" onClick={() => setSelectedStageForModal(null)}>閉じる</Button>
               <Button asChild disabled={modalButtonDisabled}>
-                <Link href={`/courses/${course.id}/stages/${selectedStageForModal.id}`}>
-                  {modalButtonText}
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </Link>
+                 {/* Link only rendered if not disabled, to prevent navigation to locked stages */}
+                {!modalButtonDisabled ? (
+                    <Link href={`/courses/${course.id}/stages/${selectedStageForModal.id}`}>
+                    {modalButtonText}
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                    </Link>
+                ) : (
+                    // Render a span or fragment if disabled to satisfy asChild
+                    // The button itself is disabled, so this link won't be interactive
+                    // but this structure prevents error with asChild.
+                    // Or simply don't use asChild if the button is meant to be non-navigational when disabled.
+                    // For now, this will render a disabled button with text but no link functionality.
+                    // To ensure it's truly not a link, we can conditional render the Link component
+                    // based on modalButtonDisabled.
+                    // Let's simplify by making the button itself handle the text.
+                    // The asChild should be on the Button, and the Link inside it.
+                    // Corrected approach: Conditionally wrap with Link.
+                    <span>
+                        {modalButtonText}
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                    </span>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -504,3 +501,4 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
+

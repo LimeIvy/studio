@@ -13,6 +13,8 @@
     *   `stripeCustomerId` (文字列, null許容, Stripe顧客ID連携用)
     *   `activeSubscriptionId` (文字列, null許容, StripeサブスクリプションID連携用)
     *   `subscriptionStatus` (文字列, null許容, 例: 'active', 'canceled', 'past_due')
+    *   `xp` (整数, デフォルト 0) - 経験値
+    *   `level` (整数, デフォルト 1) - ユーザーレベル
     *   *その他のメタデータ (例: 登録日 - Supabase Authが管理)*
 *   **Courses (コース)**:
     *   `id` (UUID, 主キー)
@@ -31,9 +33,10 @@
     *   `courseId` (UUID, Coursesへの外部キー)
     *   `title` (文字列)
     *   `order` (整数)
-    *   `fileType` (列挙型: `md`, `pdf`)
-    *   `filePath` (文字列, null許容 - `md`の場合は直接コンテンツ、`pdf`の場合はSupabase Storageのパス)
-    *   `markdownContent` (テキスト, null許容 - `md`ファイルタイプの場合のコンテンツ)
+    *   `fileType` (列挙型: `md`) - Markdownファイルのみサポート
+    *   `filePath` (文字列, null許容 - Supabase Storageのパスまたは直接コンテンツを示す識別子)
+    *   `markdownContent` (テキスト, null許容 - Markdownコンテンツ)
+    *   `xpAward` (整数, デフォルト 10) - ステージクリア時の獲得経験値
 *   **StageLinks (ステージリンク)**:
     *   `id` (UUID, 主キー)
     *   `fromStageId` (UUID, Stagesへの外部キー)
@@ -89,8 +92,7 @@
 
 *   **Supabase Storage** を使用してファイルストレージを管理します。
     *   **コースカバー画像**: `Courses.imageUrl` に保存されるパスは、Supabase Storage内の画像ファイルを指します。公開バケットまたは署名付きURLを利用します。
-    *   **ステージファイル (PDF)**: `Stages.fileType === 'pdf'` の場合、`Stages.filePath` はSupabase Storage内のPDFファイルを指します。アクセス制御されたバケット（例: 認証済みユーザーのみ、またはコース購入者/チームメンバーのみアクセス可能）を使用します。
-    *   **ステージファイル (Markdown)**: `Stages.fileType === 'md'` の場合、コンテンツは`Stages.markdownContent`に直接保存するか、オプションとして`.md`ファイルをSupabase Storageに保存し`Stages.filePath`で参照することも可能です。
+    *   **ステージファイル (Markdown)**: `Stages.fileType === 'md'` の場合、コンテンツは`Stages.markdownContent`に直接保存するか、オプションとして`.md`ファイルをSupabase Storageに保存し`Stages.filePath`で参照することも可能です。アクセス制御されたバケット（例: 認証済みユーザーのみ、またはコース購入者/チームメンバーのみアクセス可能）を使用します。
 *   ファイルのアップロード、ダウンロード、削除処理を実装します。
 *   Supabase Storageのポリシーを活用して、ファイルへのアクセス権限を適切に管理します (例: ユーザー自身のアップロードしたファイル、チームメンバー限定のファイルなど)。
 
@@ -149,6 +151,10 @@
     *   アプリケーションロジック (Supabase RLSポリシーと併用) で以下を確認:
         *   アクセスを許可する前に、ユーザーが特定の公開コースを購入したかどうか (または無料コースか)。
         *   チーム関連機能を利用する前に、ユーザーがアクティブなチームサブスクリプションを持っているかどうか (`Users.subscriptionStatus` または `Subscriptions`テーブルを確認)。
+5.  **経験値とレベル管理**:
+    *   ユーザーがステージを完了するたびに、`UserProgress`を作成/更新。
+    *   `Stages.xpAward` に基づいて `Users.xp` を加算。
+    *   `Users.xp` が一定の閾値を超えるたびに `Users.level` を更新。
 
 ### Stripe APIキー
 

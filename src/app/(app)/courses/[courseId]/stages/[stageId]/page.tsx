@@ -1,18 +1,18 @@
 
 "use client";
 import Link from 'next/link';
-import { notFound, useParams as useNextParams } from 'next/navigation'; // Renamed useParams to useNextParams
-import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage, fetchStageContent, XP_PER_LEVEL, getXpForNextLevel } from '@/lib/mock-data';
+import { notFound, useParams as useNextParams } from 'next/navigation';
+import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage, fetchStageContent, getLinksForCourse } from '@/lib/mock-data';
 import type { Stage, StageCompletionResult } from '@/lib/types';
 import { MarkdownDisplay } from '@/components/core/markdown-display';
 import { CompletionButton } from '@/components/core/completion-button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Home, FileText, FileType, ChevronRight, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, ChevronRight, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
+
 
 interface StagePageProps {
   params: { courseId: string; stageId: string };
@@ -29,11 +29,39 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
   const [isStageCompleted, setIsStageCompleted] = useState(() => 
     stage ? !!getProgressForStage(mockUser.id, stage.id) : false
   );
-  // State for user's XP and level to update UI instantly
+  
   const [currentUserXp, setCurrentUserXp] = useState(mockUser.xp);
   const [currentUserLevel, setCurrentUserLevel] = useState(mockUser.level);
 
-  const { toast } = useToast();
+
+  // Check if stage is accessible
+  useEffect(() => {
+    if (stage && course) {
+      const stagesForCourse = getStagesForCourse(course.id);
+      const linksForCourse = getLinksForCourse(course.id);
+      let isAccessible = stage.order === 1;
+      if (!isAccessible) {
+        const incomingLinks = linksForCourse.filter(l => l.to_stage_id === stage.id);
+        if (incomingLinks.length === 0 && stage.order !== 1) {
+          const previousStageInOrder = stagesForCourse.find(s => s.order === stage.order - 1);
+          if (previousStageInOrder && getProgressForStage(mockUser.id, previousStageInOrder.id)) {
+            isAccessible = true;
+          }
+        } else {
+          for (const link of incomingLinks) {
+            if (getProgressForStage(mockUser.id, link.from_stage_id)) {
+              isAccessible = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!isAccessible) {
+        notFound(); // Or redirect to course page with a message
+      }
+    }
+  }, [stage, course]);
+
 
   useEffect(() => {
     if (stage) {
@@ -49,12 +77,12 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
           setIsLoadingContent(false);
         });
       
-      setIsStageCompleted(!!getProgressForStage(mockUser.id, stage.id));
-      // Sync user's current XP and level on mount/stage change
+      const progress = getProgressForStage(mockUser.id, stage.id);
+      setIsStageCompleted(!!progress);
       setCurrentUserXp(mockUser.xp);
       setCurrentUserLevel(mockUser.level);
     }
-  }, [stage]); // mockUser.id is static, but its properties might change
+  }, [stage]); 
 
   if (!course || !stage || stage.course_id !== course.id) {
     notFound();
@@ -68,11 +96,8 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
   const handleStageCompletion = (result: StageCompletionResult) => {
     if (result.progress.stage_id === stage.id) {
       setIsStageCompleted(true);
-      // Update local state for immediate UI feedback on XP/Level
-      setCurrentUserXp(mockUser.xp); // mockUser is updated in completeStage
+      setCurrentUserXp(mockUser.xp); 
       setCurrentUserLevel(mockUser.level);
-
-      // No need to repeat the toast here, it's handled in CompletionButton
     }
   };
 
@@ -93,32 +118,11 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
       return <p className="text-destructive text-center p-4">コンテンツを読み込めませんでした。</p>;
     }
 
+    // Only MD files are supported now
     if (stage.fileType === 'md') {
       return <MarkdownDisplay content={stageContent} />;
     }
-    if (stage.fileType === 'pdf') {
-      return (
-        <div className="space-y-6 p-4 rounded-lg border bg-card">
-          <div className="flex items-center space-x-3 text-xl font-semibold text-foreground">
-            <FileType className="h-7 w-7 text-primary" />
-            <span>PDFドキュメント: {stage.title}</span>
-          </div>
-          <CardDescription>
-            このステージのコンテンツはPDF形式です。下のボタンからPDFを開いてください。
-            {stage.markdownContent && <span className="block mt-3 text-sm">概要: {stage.markdownContent}</span>}
-          </CardDescription>
-          <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto">
-            <a href={`/mock-pdfs/${stage.filePath}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-              <FileText className="mr-2 h-5 w-5" />
-              PDFを開く (新規タブ)
-            </a>
-          </Button>
-          <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-            注意: このリンクは、PDFが `/public/mock-pdfs/` ディレクトリに配置されていることを前提としています。
-          </p>
-        </div>
-      );
-    }
+   
     return <p className="text-destructive text-center p-4">不明なファイル形式です。</p>;
   };
 
@@ -152,10 +156,12 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
               <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{stage.title}</CardTitle>
               <CardDescription className="text-sm pt-1">コース: {course.title} - ステージ {stage.order} ({stage.fileType.toUpperCase()})</CardDescription>
             </div>
-            <Badge variant="outline" className="mt-2 sm:mt-0 text-base px-3 py-1.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
-              <Zap className="mr-2 h-5 w-5 text-yellow-600 dark:text-yellow-500" />
-              {stage.xpAward} XP獲得可能
-            </Badge>
+            {isStageCompleted && ( // Show XP award only if stage is completed
+                 <Badge variant="outline" className="mt-2 sm:mt-0 text-base px-3 py-1.5 border-green-500 bg-green-500/10 text-green-700 dark:text-green-400 dark:bg-green-500/20">
+                    <Zap className="mr-2 h-5 w-5 text-green-600 dark:text-green-500" />
+                    {stage.xpAward} XP獲得済
+                </Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="p-6 md:p-8 min-h-[300px] bg-background">
@@ -201,3 +207,4 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
     </div>
   );
 }
+
