@@ -85,7 +85,7 @@ export default function TeamDetailsPage() {
               <h2 className="text-xl font-semibold text-foreground">チームコース</h2>
               {canCreateCourseForTeam && (
                 <Button asChild>
-                  <Link href={`/courses/new/team/${team.id}`}>
+                  <Link href={`/courses/new?teamId=${team.id}`}>
                     <PlusCircle className="mr-2 h-4 w-4" /> 新しいコースを追加
                   </Link>
                 </Button>

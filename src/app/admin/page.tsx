@@ -30,7 +30,7 @@ export default function AdminPage() {
           </div>
           {/* General "Add New" button could lead to a selection page */}
           <Button size="lg" asChild>
-             <Link href="/courses/new/public"> {/* Default to creating public course for simplicity */}
+             <Link href="/courses/new?target=public"> {/* Default to creating public course for simplicity */}
                 <PlusCircle className="mr-2 h-5 w-5" /> 新規コンテンツを追加
              </Link>
           </Button>

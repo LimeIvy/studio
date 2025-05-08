@@ -23,7 +23,7 @@ const bottomNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const userTeams = getUserTeams(mockUser.id);
+  const userTeams = getUserTeams(mockUser.id).filter(team => team.members.some(m => m.userId === mockUser.id && (m.role === 'leader' || m.role === 'editor')));
 
   return (
     <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
@@ -51,7 +51,7 @@ export function AppSidebar() {
               <AccordionItem value="teams-navigation" className="border-none">
                 <AccordionTrigger className={cn(
                   "py-2 px-3 text-sm font-medium hover:bg-muted hover:no-underline rounded-md",
-                  pathname.startsWith('/teams/') && "bg-muted text-primary"
+                  pathname.startsWith('/teams/') && !pathname.startsWith('/teams/new') && "bg-muted text-primary"
                 )}>
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4" />
@@ -60,7 +60,7 @@ export function AppSidebar() {
                 </AccordionTrigger>
                 <AccordionContent className="pt-1">
                   <div className="space-y-1 pl-6">
-                    {userTeams.map(team => (
+                    {getUserTeams(mockUser.id).map(team => ( // Show all teams user is part of for navigation
                       <Button
                         key={team.id}
                         variant={pathname === `/teams/${team.id}` ? 'secondary' : 'ghost'}
@@ -91,7 +91,7 @@ export function AppSidebar() {
             <AccordionItem value="course-creation" className="border-none">
               <AccordionTrigger className={cn(
                   "py-2 px-3 text-sm font-medium hover:bg-muted hover:no-underline rounded-md",
-                  pathname.startsWith('/courses/new') && "bg-muted text-primary"
+                  pathname === '/courses/new' && "bg-muted text-primary"
               )}>
                  <div className="flex items-center">
                   <BookOpen className="mr-2 h-4 w-4" />
@@ -101,26 +101,35 @@ export function AppSidebar() {
               <AccordionContent className="pt-1">
                  <div className="space-y-1 pl-6">
                     <Button
-                        variant={pathname === `/courses/new/public` ? 'secondary' : 'ghost'}
+                        variant={pathname === `/courses/new` && new URLSearchParams(window.location.search).get('target') === 'public' ? 'secondary' : 'ghost'}
                         className="w-full justify-start h-8 text-xs"
                         asChild
                       >
-                        <Link href="/courses/new/public">
+                        <Link href="/courses/new?target=public">
                           公開コースを作成
                         </Link>
                     </Button>
-                    {userTeams.map(team => (
+                    {userTeams.map(team => ( // Only show teams where user can create courses
                        <Button
                         key={`create-for-${team.id}`}
-                        variant={pathname === `/courses/new/team/${team.id}` ? 'secondary' : 'ghost'}
+                        variant={pathname === `/courses/new` && new URLSearchParams(window.location.search).get('teamId') === team.id ? 'secondary' : 'ghost'}
                         className="w-full justify-start h-8 text-xs"
                         asChild
                       >
-                        <Link href={`/courses/new/team/${team.id}`}>
+                        <Link href={`/courses/new?teamId=${team.id}`}>
                           {team.name}用コース作成
                         </Link>
                       </Button>
                     ))}
+                    {userTeams.length === 0 && (
+                       <Button
+                        variant='ghost'
+                        className="w-full justify-start h-8 text-xs text-muted-foreground italic"
+                        disabled
+                      >
+                        (編集権限のあるチームなし)
+                      </Button>
+                    )}
                  </div>
               </AccordionContent>
             </AccordionItem>

@@ -54,6 +54,7 @@ export default function TeamHubPage() {
 
           const currentUserMemberInfo = team.members.find(m => m.userId === currentUser.id);
           const canManageTeam = currentUserMemberInfo?.role === 'leader';
+          const canCreateCourseForTeam = currentUserMemberInfo?.role === 'leader' || currentUserMemberInfo?.role === 'editor';
 
 
           return (
@@ -84,9 +85,9 @@ export default function TeamHubPage() {
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-semibold text-foreground">チームコース</h3>
-                    {(currentUserMemberInfo?.role === 'leader' || currentUserMemberInfo?.role === 'editor') && (
+                    {canCreateCourseForTeam && (
                       <Button asChild>
-                        <Link href={`/courses/new/team/${team.id}`}>
+                        <Link href={`/courses/new?teamId=${team.id}`}>
                           <PlusCircle className="mr-2 h-4 w-4" /> このチームにコースを追加
                         </Link>
                       </Button>
@@ -102,7 +103,7 @@ export default function TeamHubPage() {
                     <div className="text-center py-8 border border-dashed rounded-md">
                       <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
                       <p className="text-md text-muted-foreground">このチームにはまだコースがありません。</p>
-                      {(currentUserMemberInfo?.role === 'leader' || currentUserMemberInfo?.role === 'editor') && (
+                      {canCreateCourseForTeam && (
                          <p className="text-sm text-muted-foreground mt-1">上のボタンから新しいコースを追加できます。</p>
                       )}
                     </div>

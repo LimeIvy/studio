@@ -31,7 +31,7 @@ export default function PublicCoursesPage() {
           </p>
         </div>
         <Button asChild size="lg">
-          <Link href="/courses/new/public">
+          <Link href="/courses/new?target=public">
             <FilePlus2 className="mr-2 h-5 w-5" />
             公開コースを作成
           </Link>
