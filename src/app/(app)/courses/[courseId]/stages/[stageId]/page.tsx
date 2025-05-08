@@ -1,9 +1,9 @@
 
 "use client";
 import Link from 'next/link';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams as useNextParams } from 'next/navigation'; // Renamed useParams to useNextParams
 import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage, fetchStageContent } from '@/lib/mock-data';
-import type { Stage } from '@/lib/types';
+import type { Stage, UserProgress } from '@/lib/types';
 import { MarkdownDisplay } from '@/components/core/markdown-display';
 import { CompletionButton } from '@/components/core/completion-button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,18 +13,27 @@ import React, { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface StagePageProps {
-  // Params will be accessed via the useParams hook
+  params: { courseId: string; stageId: string };
 }
 
-export default function StagePage({}: StagePageProps) {
-  const routeParams = useParams() as { courseId: string; stageId: string };
-
+export default function StagePage({ params: paramsFromProps }: StagePageProps) {
+  // Use next/navigation's useParams hook directly for client components
+  const routeParams = useNextParams() as { courseId: string; stageId: string };
+  
+  // If you were intending to use React.use for promise unwrapping (which is more for Server Components or specific suspense patterns)
+  // const params = React.use(Promise.resolve(paramsFromProps)); 
+  // For client components, direct prop access or useParams is typical. We'll use routeParams from useNextParams.
 
   const course = getCourseById(routeParams.courseId);
   const stage = getStageById(routeParams.stageId);
 
   const [stageContent, setStageContent] = useState<string | null>(null);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
+  
+  // State for completion status, initialized and updated for immediate UI feedback
+  const [isStageCompleted, setIsStageCompleted] = useState(() => 
+    stage ? !!getProgressForStage(mockUser.id, stage.id) : false
+  );
 
   useEffect(() => {
     if (stage) {
@@ -35,12 +44,15 @@ export default function StagePage({}: StagePageProps) {
           setIsLoadingContent(false);
         })
         .catch(error => {
-          console.error("Failed to fetch stage content:", error);
+          console.error("ステージコンテンツの読み込みに失敗しました:", error);
           setStageContent("ステージコンテンツの読み込みに失敗しました。");
           setIsLoadingContent(false);
         });
+      
+      // Re-sync completion status if stage or user changes, or on mount
+      setIsStageCompleted(!!getProgressForStage(mockUser.id, stage.id));
     }
-  }, [stage]);
+  }, [stage]); // mockUser.id is static for this app's context
 
   if (!course || !stage || stage.course_id !== course.id) {
     notFound();
@@ -50,7 +62,12 @@ export default function StagePage({}: StagePageProps) {
   const currentIndex = courseStages.findIndex(s => s.id === stage.id);
   const prevStage = currentIndex > 0 ? courseStages[currentIndex - 1] : null;
   const nextStage = currentIndex < courseStages.length - 1 ? courseStages[currentIndex + 1] : null;
-  const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
+
+  const handleStageCompletion = (progress: UserProgress) => {
+    if (progress.stage_id === stage.id) {
+      setIsStageCompleted(true);
+    }
+  };
 
   const renderContent = () => {
     if (isLoadingContent) {
@@ -144,19 +161,19 @@ export default function StagePage({}: StagePageProps) {
             <CompletionButton 
               stageId={stage.id} 
               userId={mockUser.id} 
-              nextStageId={nextStage?.id}
+              onComplete={handleStageCompletion}
               courseId={course.id}
             />
           </div>
 
           <div className="flex w-full sm:w-auto justify-end">
-             {nextStage && isCompleted ? (
+             {nextStage && isStageCompleted ? (
               <Button variant="default" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}/stages/${nextStage.id}`}>
                   次のステージ <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-            ) : !nextStage && isCompleted ? (
+            ) : !nextStage && isStageCompleted ? (
                <Button variant="default" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}`}>
                   コースマップへ戻る
@@ -169,3 +186,4 @@ export default function StagePage({}: StagePageProps) {
     </div>
   );
 }
+

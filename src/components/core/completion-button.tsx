@@ -14,11 +14,11 @@ interface CompletionButtonProps {
   stageId: string;
   userId: string; 
   onComplete?: (progress: UserProgress) => void;
-  nextStageId?: string | null;
+  // nextStageId prop removed as it's no longer used for text
   courseId: string;
 }
 
-export function CompletionButton({ stageId, userId, onComplete, nextStageId, courseId }: CompletionButtonProps) {
+export function CompletionButton({ stageId, userId, onComplete, courseId }: CompletionButtonProps) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true); 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,11 +97,7 @@ export function CompletionButton({ stageId, userId, onComplete, nextStageId, cou
         <>
           <CheckCircle2 className="mr-2 h-5 w-5" />
           ステージ完了！
-          {nextStageId && (
-            <span className="ml-1.5 opacity-90 flex items-center text-sm">
-              (次へ<ArrowRightCircle className="inline h-4 w-4 ml-1"/>)
-            </span>
-          )}
+          {/* Removed the (次へ...) span */}
         </>
       ) : (
         <>
@@ -112,3 +108,4 @@ export function CompletionButton({ stageId, userId, onComplete, nextStageId, cou
     </Button>
   );
 }
+
