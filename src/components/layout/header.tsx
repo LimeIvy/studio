@@ -1,13 +1,13 @@
-
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'; // Added SheetTitle
 import { Menu, Settings, LogOut, LayoutDashboard, Users, Globe } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
 import { mockUser } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator'; // Added Separator
 
 export function Header() {
   const user = mockUser;
@@ -41,12 +41,13 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="pr-0 w-72 bg-card">
+              <SheetTitle className="sr-only">メインメニュー</SheetTitle> {/* Added sr-only title for accessibility */}
               <Link href="/" className="flex items-center space-x-2 px-4 py-4 border-b border-border">
                 <LogoIcon className="h-7 w-7 text-primary" />
                 <span className="font-bold text-xl tracking-tight text-foreground">CourseFlow</span>
               </Link>
               <div className="space-y-1 p-4">
-                {navItems.map((item) => ( // These could also be part of a mobile-specific AppSidebar content
+                {navItems.map((item) => ( 
                   <Button variant="ghost" asChild key={item.label} className="w-full justify-start">
                     <Link
                       href={item.href}
@@ -57,7 +58,7 @@ export function Header() {
                     </Link>
                   </Button>
                 ))}
-                 <DropdownMenuSeparator />
+                 <Separator className="my-2" /> {/* Replaced DropdownMenuSeparator with Separator */}
                  <Button variant="ghost" asChild className="w-full justify-start">
                     <Link
                       href="/admin"
