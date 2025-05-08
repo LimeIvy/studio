@@ -20,10 +20,11 @@ export interface Stage {
   id: string; // UUID
   course_id: string; // UUID
   title: string;
-  // file_path: string; // Path to Markdown file in Supabase Storage
-  markdownContent: string; // For mock data, direct content
   order: number; // For display order
   position?: { x: number; y: number }; // For React Flow like visualization
+  fileType: 'md' | 'pdf'; // Type of the content file
+  filePath: string; // Path to the content file (e.g., 'docs/introduction.md' or 'slides/chapter1.pdf')
+  markdownContent?: string; // Content for 'md' files, or a brief description if desired for 'pdf'
 }
 
 export interface StageLink {

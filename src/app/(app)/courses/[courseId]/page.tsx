@@ -1,13 +1,13 @@
 
 "use client";
-import React from 'react';
+import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser } from '@/lib/mock-data';
+import { notFound, useParams as useNextParams } from 'next/navigation';
+import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser, fetchStageContent } from '@/lib/mock-data';
 import type { Stage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, FileType } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -20,17 +20,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MarkdownDisplay } from '@/components/core/markdown-display';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface ResolvedPageParams {
-  courseId: string;
-}
 
 interface StageMapPageProps {
-  params: Promise<ResolvedPageParams>; // Params is a Promise in Client Components
+  // Params are no longer passed as props directly to client components in App Router
+  // We will use `useParams` hook instead
 }
 
-export default function StageMapPage({ params: paramsPromise }: StageMapPageProps) {
-  const params = React.use(paramsPromise); // Unwrap the promise
+
+export default function StageMapPage({}: StageMapPageProps) {
+  const params = useNextParams() as { courseId: string }; // Use hook to get params
 
   const course = getCourseById(params.courseId);
 
@@ -40,7 +40,29 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
 
   const stages = getStagesForCourse(params.courseId);
   const links = getLinksForCourse(params.courseId);
-  const [selectedStageForModal, setSelectedStageForModal] = React.useState<Stage | null>(null);
+  const [selectedStageForModal, setSelectedStageForModal] = useState<Stage | null>(null);
+  const [modalContent, setModalContent] = useState<string | null>(null);
+  const [isLoadingModalContent, setIsLoadingModalContent] = useState(false);
+
+
+  useEffect(() => {
+    if (selectedStageForModal) {
+      setIsLoadingModalContent(true);
+      fetchStageContent(selectedStageForModal)
+        .then(content => {
+          setModalContent(content);
+          setIsLoadingModalContent(false);
+        })
+        .catch(error => {
+          console.error("Failed to fetch modal content:", error);
+          setModalContent("ステージコンテンツの読み込みに失敗しました。");
+          setIsLoadingModalContent(false);
+        });
+    } else {
+      setModalContent(null); // Clear content when modal closes
+    }
+  }, [selectedStageForModal]);
+
 
   const stageMap = stages.reduce((acc, stage) => {
     acc[stage.id] = stage;
@@ -51,27 +73,26 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
   const STAGE_WIDTH = 200; 
   const STAGE_HEIGHT = 80; 
   const PADDING = 50;
-  const ROW_SPACING = 120; // STAGE_HEIGHT + 40
-  const COL_SPACING = 270; // STAGE_WIDTH + 70
-  const STAGES_PER_COL = Math.max(1, Math.floor((typeof window !== 'undefined' ? window.innerHeight * 0.6 : 500) / ROW_SPACING)); // Adjust based on typical viewport height portion for map
-
+  const ROW_SPACING = STAGE_HEIGHT + 40; // Vertical spacing
+  const COL_SPACING = STAGE_WIDTH + 70; // Horizontal spacing
+  
+  // Calculate dynamic map width and height based on content
+  const maxCols = stages.reduce((max, s) => {
+    if (!s.position) return max;
+    return Math.max(max, Math.floor((s.position.x - PADDING) / COL_SPACING) + 1);
+  },1);
 
   const maxRows = stages.reduce((max, s) => {
     if (!s.position) return max;
     return Math.max(max, Math.floor((s.position.y - PADDING) / ROW_SPACING) + 1);
   }, 1);
 
-  const mapHeight = stages.length > 0
-    ? PADDING * 2 + (maxRows -1) * ROW_SPACING + STAGE_HEIGHT
-    : PADDING * 2;
-
-  const maxCols = stages.reduce((max, s) => {
-    if (!s.position) return max;
-    return Math.max(max, Math.floor((s.position.x - PADDING) / COL_SPACING) + 1);
-  },1);
-  
-  const mapWidth = stages.length > 0
+  const mapWidth = stages.length > 0 
     ? PADDING * 2 + (maxCols - 1) * COL_SPACING + STAGE_WIDTH
+    : PADDING * 2;
+  
+  const mapHeight = stages.length > 0
+    ? PADDING * 2 + (maxRows - 1) * ROW_SPACING + STAGE_HEIGHT
     : PADDING * 2;
 
 
@@ -171,6 +192,50 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
       }
   }
 
+ const renderModalContent = () => {
+    if (isLoadingModalContent) {
+      return (
+        <div className="space-y-2 mt-4">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      );
+    }
+    if (!modalContent || !selectedStageForModal) {
+      return <p>コンテンツを読み込めませんでした。</p>;
+    }
+
+    if (selectedStageForModal.fileType === 'md') {
+      return <MarkdownDisplay content={modalContent} />;
+    }
+    if (selectedStageForModal.fileType === 'pdf') {
+      return (
+         <div className="space-y-4">
+          <div className="flex items-center space-x-2 text-lg font-semibold">
+            <FileType className="h-6 w-6 text-primary" />
+            <span>PDFドキュメント: {selectedStageForModal.title}</span>
+          </div>
+          <p className="text-muted-foreground">
+            このステージのコンテンツはPDF形式です。
+            {selectedStageForModal.markdownContent && <span className="block mt-2">概要: {selectedStageForModal.markdownContent}</span>}
+          </p>
+           <Button asChild variant="outline">
+            <a href={`/mock-pdfs/${selectedStageForModal.filePath}`} target="_blank" rel="noopener noreferrer">
+              PDFを開く (新規タブ)
+              <FileText className="ml-2 h-4 w-4" />
+            </a>
+          </Button>
+           <p className="text-xs text-muted-foreground">
+            注意: このリンクは、PDFが `/public/mock-pdfs/` ディレクトリに配置されていることを前提としています。
+          </p>
+        </div>
+      );
+    }
+    return <p>不明なファイル形式です。</p>;
+  };
+
 
   return (
     <div className="space-y-8">
@@ -231,15 +296,21 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
                   let ctrlX2 = x2 - dx * curveStrength;
                   let ctrlY2 = y2;
 
-                  if (Math.abs(dx) < STAGE_WIDTH) { 
-                    ctrlX1 = x1 + Math.sign(dx+0.01) * STAGE_WIDTH * 0.5 ; 
-                    ctrlY1 = y1 + dy * 0.3;
-                    ctrlX2 = x2 - Math.sign(dx+0.01) * STAGE_WIDTH * 0.5;
-                    ctrlY2 = y2 - dy * 0.3;
-                  } else if (Math.abs(dy) < STAGE_HEIGHT) { 
-                     ctrlY1 = y1 + Math.sign(dy+0.01) * STAGE_HEIGHT * 0.5;
-                     ctrlY2 = y2 - Math.sign(dy+0.01) * STAGE_HEIGHT * 0.5;
+                  // Adjust control points for better curve appearance if stages are vertically aligned or close
+                  if (Math.abs(dx) < STAGE_WIDTH * 0.5 && Math.abs(dy) > STAGE_HEIGHT * 0.5) { // primarily vertical
+                    ctrlX1 = x1 + dx * 0.5 + Math.sign(dx+0.01) * COL_SPACING * 0.2; 
+                    ctrlY1 = y1 + dy * 0.4;
+                    ctrlX2 = x2 - dx * 0.5 - Math.sign(dx+0.01) * COL_SPACING * 0.2;
+                    ctrlY2 = y2 - dy * 0.4;
+                  } else if (Math.abs(dy) < STAGE_HEIGHT * 0.5 && Math.abs(dx) > STAGE_WIDTH * 0.5) { // primarily horizontal
+                     // default is okay
+                  } else { // diagonal or close
+                    ctrlX1 = x1 + dx * 0.4;
+                    ctrlY1 = y1 + dy * 0.1;
+                    ctrlX2 = x2 - dx * 0.4;
+                    ctrlY2 = y2 - dy * 0.1;
                   }
+
 
                   const arrowId = `arrow-${link.id}`;
                   const markerSize = isFromCompleted ? 6 : 4;
@@ -306,7 +377,7 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
                   icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
                   statusAriaLabel = '完了';
                 } else if (isCurrent) {
-                  cardClass = 'border-primary bg-blue-100 dark:bg-blue-900/50 hover:shadow-lg animate-pulse-slow';
+                  cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg animate-pulse-slow';
                   icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
                   statusAriaLabel = '学習可能';
                 }
@@ -318,8 +389,7 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
                     <Card
                       className={cn(
                         "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer flex flex-col items-center justify-center text-center",
-                        cardClass,
-                        !isAccessible && !isCompleted && "opacity-100" // Ensure locked stages are fully opaque
+                        cardClass
                       )}
                       style={{
                         left: `${stage.position.x}px`,
@@ -335,6 +405,7 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
                           <h3 className="text-xs font-medium leading-tight break-words mt-1">
                             ステージ {stage.order}: {stage.title}
                           </h3>
+                          <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
                       </CardContent>
                     </Card>
                   </DialogTrigger>
@@ -355,19 +426,19 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageProp
                    <Badge
                     variant={modalStatusVariant}
                     className={cn(
-                        "text-xs", // Ensure badge text is small
+                        "text-xs", 
                         modalStageIsCompleted && "bg-green-600 hover:bg-green-700 text-primary-foreground",
                         modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
                     as="span"
                    >
-                    {modalStatusText}
+                    {modalStatusText} ({selectedStageForModal.fileType.toUpperCase()})
                    </Badge>
                 </div>
               </DialogDescription>
             </DialogHeader>
             <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent py-4">
-              <MarkdownDisplay content={selectedStageForModal.markdownContent} />
+              {renderModalContent()}
             </div>
             <DialogFooter className="mt-auto pt-4 border-t">
               <Button variant="outline" onClick={() => setSelectedStageForModal(null)}>閉じる</Button>

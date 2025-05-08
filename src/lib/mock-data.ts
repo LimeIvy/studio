@@ -15,7 +15,7 @@ export const mockCourses: Course[] = [
     description: 'Unityの基本を学び、簡単なゲームを作成します。',
     created_at: new Date().toISOString(),
     imageUrl: 'https://picsum.photos/seed/unity/600/400',
-    totalStages: 13, 
+    totalStages: 18, // Updated count
     completedStages: 1,
   },
   {
@@ -41,9 +41,10 @@ export const mockCourses: Course[] = [
 // Positioning constants
 const BASE_X = 50;
 const BASE_Y = 50;
-const COL_SPACING = 250; // STAGE_WIDTH (180) + 70
-const ROW_SPACING = 170; // STAGE_HEIGHT (100) + 70
+const COL_SPACING = 270; 
+const ROW_SPACING = 120; 
 const STAGES_PER_ROW = 4;
+
 
 const calculatePositions = (stages: Stage[], courseId: string): Stage[] => {
   const courseStages = stages
@@ -64,12 +65,14 @@ const calculatePositions = (stages: Stage[], courseId: string): Stage[] => {
 };
 
 
-const rawStages: Stage[] = [
+const rawStages: Omit<Stage, 'position'>[] = [
   // Unity入門 Stages
   {
     id: 'stage-1-1',
     course_id: 'course-1',
     title: 'Unityとは？',
+    fileType: 'md',
+    filePath: 'unity/01-intro.md',
     markdownContent: `
 # Unityとは？
 
@@ -86,12 +89,13 @@ Unityは、リアルタイム3Dコンテンツを作成・運用するための�
 - Unity HubとUnity Editorの役割を知る
 `,
     order: 1,
-    // position will be calculated
   },
   {
     id: 'stage-1-2',
     course_id: 'course-1',
     title: '最初のプロジェクト作成',
+    fileType: 'md',
+    filePath: 'unity/02-first-project.md',
     markdownContent: `
 # 最初のプロジェクト作成
 
@@ -125,6 +129,8 @@ public class HelloWorld : MonoBehaviour
     id: 'stage-1-3',
     course_id: 'course-1',
     title: '基本操作とインターフェース',
+    fileType: 'md',
+    filePath: 'unity/03-basic-operations.md',
     markdownContent: `
 # 基本操作とインターフェース
 
@@ -145,6 +151,8 @@ _このステージを完了すると、Unityの基本的な使い方が身に�
     id: 'stage-1-4',
     course_id: 'course-1',
     title: 'ゲームオブジェクトとコンポーネント',
+    fileType: 'md',
+    filePath: 'unity/04-gameobjects-components.md',
     markdownContent: `
 # ゲームオブジェクトとコンポーネント
 
@@ -182,6 +190,8 @@ public class PlayerController : MonoBehaviour
     id: 'stage-1-5',
     course_id: 'course-1',
     title: 'プレハブの活用',
+    fileType: 'md',
+    filePath: 'unity/05-prefabs.md',
     markdownContent: `
 # プレハブの活用
 
@@ -218,6 +228,8 @@ public class Spawner : MonoBehaviour
     id: 'stage-1-6',
     course_id: 'course-1',
     title: 'マテリアルとテクスチャ',
+    fileType: 'md',
+    filePath: 'unity/06-materials-textures.md',
     markdownContent: `
 # マテリアルとテクスチャ
 
@@ -243,6 +255,8 @@ public class Spawner : MonoBehaviour
     id: 'stage-1-7',
     course_id: 'course-1',
     title: 'ライティングの基礎',
+    fileType: 'md',
+    filePath: 'unity/07-lighting-basics.md',
     markdownContent: `
 # ライティングの基礎
 
@@ -268,6 +282,8 @@ public class Spawner : MonoBehaviour
     id: 'stage-1-8',
     course_id: 'course-1',
     title: 'UIの基本 (Canvas)',
+    fileType: 'md',
+    filePath: 'unity/08-ui-canvas.md',
     markdownContent: `
 # UIの基本 (Canvas)
 
@@ -297,6 +313,8 @@ Canvasがなければ自動的に作成されます。
     id: 'stage-1-9',
     course_id: 'course-1',
     title: '物理演算の基礎 (Rigidbody)',
+    fileType: 'md',
+    filePath: 'unity/09-physics-rigidbody.md',
     markdownContent: `
 # 物理演算の基礎 (Rigidbody)
 
@@ -344,6 +362,8 @@ ForceMode には \`Force\`, \`Acceleration\`, \`Impulse\`, \`VelocityChange\` �
     id: 'stage-1-10',
     course_id: 'course-1',
     title: 'コライダーと衝突判定',
+    fileType: 'md',
+    filePath: 'unity/10-colliders-collision.md',
     markdownContent: `
 # コライダーと衝突判定
 
@@ -393,6 +413,8 @@ public class CollisionDetector : MonoBehaviour
     id: 'stage-1-11',
     course_id: 'course-1',
     title: 'スクリプト間の連携',
+    fileType: 'md',
+    filePath: 'unity/11-script-communication.md',
     markdownContent: `
 # スクリプト間の連携
 
@@ -489,6 +511,8 @@ public class Enemy : MonoBehaviour
     id: 'stage-1-12',
     course_id: 'course-1',
     title: 'オーディオの再生 (AudioSource)',
+    fileType: 'md',
+    filePath: 'unity/12-audio-basics.md',
     markdownContent: `
 # オーディオの再生 (AudioSource)
 
@@ -553,6 +577,8 @@ public class SoundPlayer : MonoBehaviour
     id: 'stage-1-13',
     course_id: 'course-1',
     title: '簡単なゲームのビルド',
+    fileType: 'md',
+    filePath: 'unity/13-building-game.md',
     markdownContent: `
 # 簡単なゲームのビルド
 
@@ -580,12 +606,95 @@ public class SoundPlayer : MonoBehaviour
 `,
     order: 13,
   },
+  {
+    id: 'stage-1-14-pdf',
+    course_id: 'course-1',
+    title: 'Unity PDF ガイド',
+    order: 14,
+    fileType: 'pdf',
+    filePath: 'references/unity_optimization_guide.pdf',
+    markdownContent: 'このステージでは、パフォーマンス最適化に関するPDF資料を参照します。実際のファイルは提供されませんが、アプリケーションはPDFファイルを表示する機能を示します。',
+  },
+  {
+    id: 'stage-1-15',
+    course_id: 'course-1',
+    title: 'アニメーション入門',
+    order: 15,
+    fileType: 'md',
+    filePath: 'unity/15-animation-intro.md',
+    markdownContent: `
+# アニメーション入門
+
+Unityのアニメーションシステム（Mecanim）の基本を学びます。
+
+## Animationウィンドウ
+- オブジェクトのプロパティを時間軸に沿って変化させることでアニメーションクリップを作成します。
+- 位置、回転、スケール、マテリアルの色などをアニメーション化できます。
+
+## Animatorコントローラ
+- アニメーションクリップ間の遷移やブレンドを管理します。
+- ステートマシンを使って、キャラクターの待機、歩行、ジャンプなどの状態遷移を定義します。
+
+## Animatorコンポーネント
+- ゲームオブジェクトにAnimatorコントローラをアタッチし、アニメーションを再生します。
+`,
+  },
+  {
+    id: 'stage-1-16-pdf',
+    course_id: 'course-1',
+    title: 'シェーダーグラフ資料 (PDF)',
+    order: 16,
+    fileType: 'pdf',
+    filePath: 'references/shader_graph_cookbook.pdf',
+    markdownContent: 'Unityのシェーダーグラフに関する詳細なPDF資料です。カスタムシェーダー作成の基礎について解説します。',
+  },
+  {
+    id: 'stage-1-17',
+    course_id: 'course-1',
+    title: 'バージョン管理 (Git)',
+    order: 17,
+    fileType: 'md',
+    filePath: 'unity/17-version-control.md',
+    markdownContent: `
+# バージョン管理 (Git)
+
+UnityプロジェクトでGitを使用する際の基本的な設定とベストプラクティスを学びます。
+
+## .gitignore
+- Unityが生成する一時ファイルやローカル設定ファイルをバージョン管理対象から除外します。
+- GitHubが提供するUnity用の \`.gitignore\` テンプレートが便利です。
+
+## 大規模アセットの管理
+- Git LFS (Large File Storage) を使用して、大きなテクスチャやモデルファイルを効率的に扱います。
+`,
+  },
+  {
+    id: 'stage-1-18',
+    course_id: 'course-1',
+    title: 'デバッグとプロファイリング',
+    order: 18,
+    fileType: 'md',
+    filePath: 'unity/18-debugging-profiling.md',
+    markdownContent: `
+# デバッグとプロファイリング
+
+Unityでのデバッグ方法とパフォーマンス最適化のためのプロファイラツールの使い方を学びます。
+
+## Debug.Log
+- コンソールにメッセージを出力して、変数の値や処理の流れを確認します。
+
+## Profilerウィンドウ
+- CPU使用率、メモリ使用量、レンダリング統計などをリアルタイムで確認し、パフォーマンスのボトルネックを特定します。
+`,
+  },
 
   // Ruby入門 Stages
   {
     id: 'stage-2-1',
     course_id: 'course-2',
     title: 'Rubyの概要と環境構築',
+    fileType: 'md',
+    filePath: 'ruby/01-intro-setup.md',
     markdownContent: `
 # Rubyの概要と環境構築
 
@@ -609,6 +718,8 @@ Rubyは、まつもとゆきひろ氏によって開発されたオブジェク�
     id: 'stage-2-2',
     course_id: 'course-2',
     title: '基本的な構文',
+    fileType: 'md',
+    filePath: 'ruby/02-basic-syntax.md',
     markdownContent: `
 # 基本的な構文
 
@@ -650,6 +761,8 @@ end
     id: 'stage-2-3',
     course_id: 'course-2',
     title: 'メソッドとクラス',
+    fileType: 'md',
+    filePath: 'ruby/03-methods-classes.md',
     markdownContent: `
 # メソッドとクラス
 
@@ -686,6 +799,8 @@ puts my_dog.bark # => Buddy says Woof!
     id: 'stage-2-4',
     course_id: 'course-2',
     title: 'ブロックとイテレータ',
+    fileType: 'md',
+    filePath: 'ruby/04-blocks-iterators.md',
     markdownContent: `
 # ブロックとイテレータ
 
@@ -717,11 +832,13 @@ puts even_numbers.inspect # => [2, 4, 6]
 `,
     order: 4,
   },
-  // Next.js と Firebase Stages (Placeholder)
+  // Next.js と Firebase Stages
   {
     id: 'stage-3-1',
     course_id: 'course-3',
     title: 'Next.jsプロジェクトセットアップ',
+    fileType: 'md',
+    filePath: 'nextjs-firebase/01-nextjs-setup.md',
     markdownContent: '# Next.jsプロジェクトセットアップ\n\nNext.jsプロジェクトの初期設定方法を学びます。',
     order: 1,
   },
@@ -729,6 +846,8 @@ puts even_numbers.inspect # => [2, 4, 6]
     id: 'stage-3-2',
     course_id: 'course-3',
     title: 'Firebaseプロジェクト連携',
+    fileType: 'md',
+    filePath: 'nextjs-firebase/02-firebase-setup.md',
     markdownContent: '# Firebaseプロジェクト連携\n\nFirebaseプロジェクトを作成し、Next.jsアプリと連携します。',
     order: 2,
   },
@@ -736,6 +855,8 @@ puts even_numbers.inspect # => [2, 4, 6]
     id: 'stage-3-3',
     course_id: 'course-3',
     title: 'Firestoreデータ操作',
+    fileType: 'md',
+    filePath: 'nextjs-firebase/03-firestore-crud.md',
     markdownContent: '# Firestoreデータ操作\n\nFirestoreデータベースの基本的なCRUD操作を学びます。',
     order: 3,
   },
@@ -743,6 +864,8 @@ puts even_numbers.inspect # => [2, 4, 6]
     id: 'stage-3-4',
     course_id: 'course-3',
     title: 'Firebase Authentication',
+    fileType: 'md',
+    filePath: 'nextjs-firebase/04-firebase-auth.md',
     markdownContent: '# Firebase Authentication\n\nFirebase Authenticationを用いたユーザー認証機能を実装します。',
     order: 4,
   },
@@ -750,6 +873,8 @@ puts even_numbers.inspect # => [2, 4, 6]
     id: 'stage-3-5',
     course_id: 'course-3',
     title: 'Firebase Hostingデプロイ',
+    fileType: 'md',
+    filePath: 'nextjs-firebase/05-firebase-hosting.md',
     markdownContent: '# Firebase Hostingデプロイ\n\n作成したアプリケーションをFirebase Hostingにデプロイします。',
     order: 5,
   },
@@ -757,9 +882,9 @@ puts even_numbers.inspect # => [2, 4, 6]
 
 
 export const mockStages: Stage[] = [
-  ...calculatePositions(rawStages, 'course-1'),
-  ...calculatePositions(rawStages, 'course-2'),
-  ...calculatePositions(rawStages, 'course-3'),
+  ...calculatePositions(rawStages as Stage[], 'course-1'),
+  ...calculatePositions(rawStages as Stage[], 'course-2'),
+  ...calculatePositions(rawStages as Stage[], 'course-3'),
 ];
 
 
@@ -768,7 +893,7 @@ export const mockStageLinks: StageLink[] = [
   { id: 'link-1-1-2', from_stage_id: 'stage-1-1', to_stage_id: 'stage-1-2' },
   { id: 'link-1-2-3', from_stage_id: 'stage-1-2', to_stage_id: 'stage-1-3' },
   { id: 'link-1-3-4', from_stage_id: 'stage-1-3', to_stage_id: 'stage-1-4' },
-  { id: 'link-1-4-5', from_stage_id: 'stage-1-4', to_stage_id: 'stage-1-5' }, // Link to next row
+  { id: 'link-1-4-5', from_stage_id: 'stage-1-4', to_stage_id: 'stage-1-5' }, 
   { id: 'link-1-5-6', from_stage_id: 'stage-1-5', to_stage_id: 'stage-1-6' },
   { id: 'link-1-6-7', from_stage_id: 'stage-1-6', to_stage_id: 'stage-1-7' },
   { id: 'link-1-7-8', from_stage_id: 'stage-1-7', to_stage_id: 'stage-1-8' },
@@ -777,7 +902,12 @@ export const mockStageLinks: StageLink[] = [
   { id: 'link-1-10-11', from_stage_id: 'stage-1-10', to_stage_id: 'stage-1-11' },
   { id: 'link-1-11-12', from_stage_id: 'stage-1-11', to_stage_id: 'stage-1-12' },
   { id: 'link-1-12-13', from_stage_id: 'stage-1-12', to_stage_id: 'stage-1-13' },
-
+  { id: 'link-1-13-14pdf', from_stage_id: 'stage-1-13', to_stage_id: 'stage-1-14-pdf' },
+  { id: 'link-1-14pdf-15', from_stage_id: 'stage-1-14-pdf', to_stage_id: 'stage-1-15' },
+  { id: 'link-1-15-16pdf', from_stage_id: 'stage-1-15', to_stage_id: 'stage-1-16-pdf' },
+  { id: 'link-1-16pdf-17', from_stage_id: 'stage-1-16-pdf', to_stage_id: 'stage-1-17' },
+  { id: 'link-1-17-18', from_stage_id: 'stage-1-17', to_stage_id: 'stage-1-18' },
+  
   // Ruby Links
   { id: 'link-2-1-2', from_stage_id: 'stage-2-1', to_stage_id: 'stage-2-2' },
   { id: 'link-2-2-3', from_stage_id: 'stage-2-2', to_stage_id: 'stage-2-3' },
@@ -864,3 +994,21 @@ export const completeStage = (userId: string, stageId: string): UserProgress => 
 
   return progress;
 };
+
+// Simulate fetching file content. In a real app, this would involve API calls or file system access.
+export async function fetchStageContent(stage: Stage): Promise<string> {
+  if (stage.fileType === 'md') {
+    // For mock data, we already have markdownContent.
+    // In a real app, you might fetch from stage.filePath here.
+    // e.g., const response = await fetch(`/api/content?path=${stage.filePath}`);
+    // const data = await response.text();
+    // return data;
+    return stage.markdownContent || `Error: Markdown content not found for ${stage.title}`;
+  }
+  if (stage.fileType === 'pdf') {
+    // For PDF, we might return a message or a URL to an embeddable viewer.
+    // For this example, we'll return a simple message or the optional markdownContent if it's a description.
+    return stage.markdownContent || `PDF Document: ${stage.title}. Path: ${stage.filePath}. (PDF viewer would be embedded here).`;
+  }
+  return `Error: Unsupported file type for stage ${stage.title}`;
+}
