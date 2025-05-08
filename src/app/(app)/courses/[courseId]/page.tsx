@@ -30,7 +30,8 @@ interface StageMapPageProps {
 }
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  const params = React.use(Promise.resolve(paramsFromProps));
+  // Directly use paramsFromProps as it should already be resolved
+  const params = paramsFromProps;
 
   const course = getCourseById(params.courseId);
 
@@ -80,30 +81,30 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
   }).filter(s => s.isCurrent).sort((a,b) => a.order - b.order);
 
   let buttonTargetStageId: string | null = null;
-  let buttonText = "学習を開始"; // "Start Learning"
+  let buttonText = "学習を開始"; 
 
   if (allStagesCompleted && stages.length > 0) {
     buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id;
-    buttonText = "最初のステージを復習"; // "Review First Stage"
+    buttonText = "最初のステージを復習"; 
   } else if (currentActiveStagesInfo.length > 0) {
     buttonTargetStageId = currentActiveStagesInfo[0].id;
     const firstActiveStage = currentActiveStagesInfo[0];
     const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id));
     buttonText = (firstActiveStage.order === 1 && !firstActiveStage.isCompleted && !userHasStartedCourse)
-                  ? "学習を開始" // "Start Learning"
-                  : "学習を続ける"; // "Continue Learning"
+                  ? "学習を開始" 
+                  : "学習を続ける"; 
   } else if (stages.length > 0) {
     buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id;
-    buttonText = "コースを復習"; // "Review Course"
+    buttonText = "コースを復習"; 
   }
 
 
   // Modal specific logic
   let modalStageIsCompleted = false;
   let modalStageIsAccessible = false;
-  let modalButtonText = 'ステージを見る'; // 'View Stage'
+  let modalButtonText = 'ステージを見る'; 
   let modalButtonDisabled = true;
-  let modalStatusText = 'ロック中'; // 'Locked'
+  let modalStatusText = 'ロック中'; 
   let modalStatusVariant: "default" | "outline" | "secondary" | "destructive" | null | undefined = "outline";
 
 
@@ -124,18 +125,18 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
       if (modalStageIsAccessible) {
           if (modalStageIsCompleted) {
-            modalButtonText = "ステージを復習"; // "Review Stage"
-            modalStatusText = "完了"; // "Completed"
-            modalStatusVariant = "default"; // Green
+            modalButtonText = "ステージを復習"; 
+            modalStatusText = "完了"; 
+            modalStatusVariant = "default"; 
           } else {
-            modalButtonText = "ステージを開始"; // "Start Stage"
-            modalStatusText = "学習可能"; // "Current"
-            modalStatusVariant = "default"; // Blue (primary)
+            modalButtonText = "ステージを開始"; 
+            modalStatusText = "学習可能"; 
+            modalStatusVariant = "default"; 
           }
           modalButtonDisabled = false;
       } else {
-          modalButtonText = "ステージはロック中"; // "Stage Locked"
-          modalStatusText = "ロック中"; // "Locked"
+          modalButtonText = "ステージはロック中"; 
+          modalStatusText = "ロック中"; 
           modalStatusVariant = "outline";
           modalButtonDisabled = true;
       }
@@ -251,18 +252,18 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
                 let cardClass = 'bg-card hover:shadow-md';
                 let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
-                let statusAriaLabel = 'ロック中'; // Locked
+                let statusAriaLabel = 'ロック中'; 
 
                 if (isCompleted) {
-                  cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
+                  cardClass = 'border-green-500 hover:shadow-lg bg-green-100 dark:bg-green-800/70';
                   icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
-                  statusAriaLabel = '完了'; // Completed
+                  statusAriaLabel = '完了'; 
                 } else if (isCurrent) {
-                  cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
+                  cardClass = 'border-primary hover:shadow-lg animate-pulse-slow bg-blue-100 dark:bg-blue-800/70';
                   icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
-                  statusAriaLabel = '学習可能'; // Current
+                  statusAriaLabel = '学習可能'; 
                 } else {
-                  cardClass = 'bg-muted border-border';
+                   cardClass = 'border-border bg-muted';
                 }
 
                 if (!stage.position) return null;
@@ -308,9 +309,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                    <Badge 
                     variant={modalStatusVariant}
                     className={cn(
-                        modalStageIsCompleted && "bg-green-600 hover:bg-green-700",
-                        modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90"
+                        modalStageIsCompleted && "bg-green-600 hover:bg-green-700 text-primary-foreground",
+                        modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
+                    as="span"
                    >
                     {modalStatusText}
                    </Badge>
@@ -335,3 +337,4 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
+
