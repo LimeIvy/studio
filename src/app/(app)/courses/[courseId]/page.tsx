@@ -27,16 +27,12 @@ interface ResolvedPageParams {
 }
 
 // This interface describes the props Next.js passes to the page component
-interface StageMapPageServerProps {
-  params: Promise<ResolvedPageParams>; // params is a Promise
+interface StageMapPageProps { // Renamed from StageMapPageServerProps for clarity
+  params: ResolvedPageParams; // params is now directly the resolved object
 }
 
-export default function StageMapPage({ params: paramsPromise }: StageMapPageServerProps) {
-  // Unwrap the promise using React.use()
-  // This hook can be used in Client Components.
-  const params = React.use(paramsPromise);
-
-  // Now 'params' is of type ResolvedPageParams, i.e., { courseId: string }
+export default function StageMapPage({ params }: StageMapPageProps) {
+  // params is now of type ResolvedPageParams, i.e., { courseId: string }
   const course = getCourseById(params.courseId);
   
   if (!course) {
@@ -159,117 +155,117 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageServ
         </CardHeader>
       </Card>
 
-      <section>
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-6 flex items-center">
-          <Map className="mr-3 h-6 w-6 text-primary" />
-          Course Map
-        </h2>
-        {stages.length > 0 ? (
-          <div 
-            className="relative rounded-lg border bg-card p-4 shadow-sm overflow-auto" 
-            style={{ width: `${mapWidth}px`, height: `${mapHeight}px` }}
-          >
-            <svg 
-              width={mapWidth} 
-              height={mapHeight} 
-              className="absolute top-0 left-0 pointer-events-none"
-              aria-hidden="true"
+      <Dialog open={!!selectedStageForModal} onOpenChange={(isOpen) => { if (!isOpen) setSelectedStageForModal(null); }}>
+        <section>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-6 flex items-center">
+            <Map className="mr-3 h-6 w-6 text-primary" />
+            Course Map
+          </h2>
+          {stages.length > 0 ? (
+            <div 
+              className="relative rounded-lg border bg-card p-4 shadow-sm overflow-auto" 
+              style={{ width: `${mapWidth}px`, height: `${mapHeight}px` }}
             >
-              {links.map(link => {
-                const fromStage = stageMap[link.from_stage_id];
-                const toStage = stageMap[link.to_stage_id];
-                if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
+              <svg 
+                width={mapWidth} 
+                height={mapHeight} 
+                className="absolute top-0 left-0 pointer-events-none"
+                aria-hidden="true"
+              >
+                {links.map(link => {
+                  const fromStage = stageMap[link.from_stage_id];
+                  const toStage = stageMap[link.to_stage_id];
+                  if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
 
-                const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
+                  const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
+                  
+                  const x1 = fromStage.position.x + STAGE_WIDTH / 2;
+                  const y1 = fromStage.position.y + STAGE_HEIGHT / 2;
+                  const x2 = toStage.position.x + STAGE_WIDTH / 2;
+                  const y2 = toStage.position.y + STAGE_HEIGHT / 2;
+
+                  return (
+                    <line
+                      key={link.id}
+                      x1={x1}
+                      y1={y1}
+                      x2={x2}
+                      y2={y2}
+                      className={cn(
+                        "transition-all duration-500",
+                        isFromCompleted ? "stroke-primary" : "stroke-border" // Line color based on source completion
+                      )}
+                      strokeWidth="3"
+                      strokeDasharray={isFromCompleted ? "none" : "6,4"} // Dashed if source not completed
+                    />
+                  );
+                })}
+              </svg>
+
+              {stages.map(stage => {
+                const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
+                let isAccessible = stage.order === 1; // First stage always accessible
+                if (!isAccessible) {
+                  // Check if any prerequisite stage is completed
+                  const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
+                  for (const link of incomingLinks) {
+                      if (getProgressForStage(mockUser.id, link.from_stage_id)) {
+                          isAccessible = true;
+                          break;
+                      }
+                  }
+                }
+                const isCurrent = isAccessible && !isCompleted;
+
+                // Define card appearance based on state
+                let cardClass = 'bg-card hover:shadow-md';
+                let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />; // Default to locked
+
+                if (isCompleted) {
+                  cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
+                  icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                } else if (isCurrent) {
+                  cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
+                  icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
+                } else { // Locked (not completed and not current/accessible)
+                  cardClass = 'bg-muted border-border hover:shadow-md'; 
+                }
                 
-                const x1 = fromStage.position.x + STAGE_WIDTH / 2;
-                const y1 = fromStage.position.y + STAGE_HEIGHT / 2;
-                const x2 = toStage.position.x + STAGE_WIDTH / 2;
-                const y2 = toStage.position.y + STAGE_HEIGHT / 2;
+                if (!stage.position) return null;
 
                 return (
-                  <line
-                    key={link.id}
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    className={cn(
-                      "transition-all duration-500",
-                      isFromCompleted ? "stroke-primary" : "stroke-border" // Line color based on source completion
-                    )}
-                    strokeWidth="3"
-                    strokeDasharray={isFromCompleted ? "none" : "6,4"} // Dashed if source not completed
-                  />
+                  <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
+                    <Card
+                      className={cn(
+                        "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer",
+                        cardClass
+                      )}
+                      style={{
+                        left: `${stage.position.x}px`,
+                        top: `${stage.position.y}px`,
+                        width: `${STAGE_WIDTH}px`,
+                        height: `${STAGE_HEIGHT}px`,
+                        zIndex: 10, // Ensure cards are above lines
+                      }}
+                      aria-label={`Stage ${stage.order}: ${stage.title}. Status: ${isCompleted ? 'Completed' : isCurrent ? 'Current' : 'Locked'}`}
+                    >
+                      <CardContent className="p-3 flex flex-col justify-center items-center h-full text-center">
+                          {icon}
+                          <h3 className="text-sm font-medium leading-tight break-words mt-1">
+                            Stage {stage.order}: {stage.title}
+                          </h3>
+                      </CardContent>
+                    </Card>
+                  </DialogTrigger>
                 );
               })}
-            </svg>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No stages defined for this course yet.</p>
+          )}
+        </section>
 
-            {stages.map(stage => {
-              const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
-              let isAccessible = stage.order === 1; // First stage always accessible
-              if (!isAccessible) {
-                // Check if any prerequisite stage is completed
-                const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
-                for (const link of incomingLinks) {
-                    if (getProgressForStage(mockUser.id, link.from_stage_id)) {
-                        isAccessible = true;
-                        break;
-                    }
-                }
-              }
-              const isCurrent = isAccessible && !isCompleted;
-
-              // Define card appearance based on state
-              let cardClass = 'bg-card hover:shadow-md';
-              let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />; // Default to locked
-
-              if (isCompleted) {
-                cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
-                icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
-              } else if (isCurrent) {
-                cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
-                icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
-              } else { // Locked (not completed and not current/accessible)
-                cardClass = 'bg-muted border-border hover:shadow-md'; // No semi-transparent for locked, just muted
-              }
-              
-              if (!stage.position) return null;
-
-              return (
-                <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
-                  <Card
-                    className={cn(
-                      "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer",
-                      cardClass
-                    )}
-                    style={{
-                      left: `${stage.position.x}px`,
-                      top: `${stage.position.y}px`,
-                      width: `${STAGE_WIDTH}px`,
-                      height: `${STAGE_HEIGHT}px`,
-                      zIndex: 10, // Ensure cards are above lines
-                    }}
-                    aria-label={`Stage ${stage.order}: ${stage.title}. Status: ${isCompleted ? 'Completed' : isCurrent ? 'Current' : 'Locked'}`}
-                  >
-                    <CardContent className="p-3 flex flex-col justify-center items-center h-full text-center">
-                        {icon}
-                        <h3 className="text-sm font-medium leading-tight break-words mt-1">
-                          Stage {stage.order}: {stage.title}
-                        </h3>
-                    </CardContent>
-                  </Card>
-                </DialogTrigger>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-muted-foreground">No stages defined for this course yet.</p>
-        )}
-      </section>
-
-      {selectedStageForModal && (
-        <Dialog open={!!selectedStageForModal} onOpenChange={(isOpen) => !isOpen && setSelectedStageForModal(null)}>
+        {selectedStageForModal && (
           <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="text-2xl">Stage {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
@@ -296,8 +292,8 @@ export default function StageMapPage({ params: paramsPromise }: StageMapPageServ
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
-      )}
+        )}
+      </Dialog>
     </div>
   );
 }
