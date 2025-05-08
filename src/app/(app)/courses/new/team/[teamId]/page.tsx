@@ -1,5 +1,5 @@
 
-import CreateCoursePage from '../page'; // Reuse the component from the parent folder
+import CreateCoursePage from '../../[mode]/page'; // Reuse the component from the parent folder
 
 // This page structure allows for a specific route for creating a team course,
 // passing the teamId as part of the URL.
@@ -7,3 +7,4 @@ import CreateCoursePage from '../page'; // Reuse the component from the parent f
 export default function CreateTeamSpecificCoursePage() {
   return <CreateCoursePage />;
 }
+
