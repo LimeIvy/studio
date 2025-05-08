@@ -1,7 +1,7 @@
 
 "use client";
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage, fetchStageContent } from '@/lib/mock-data';
 import type { Stage } from '@/lib/types';
 import { MarkdownDisplay } from '@/components/core/markdown-display';
@@ -13,24 +13,15 @@ import React, { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface StagePageProps {
-  params: {
-    courseId: string;
-    stageId: string;
-  };
+  // Params will be accessed via the useParams hook
 }
 
-export default function StagePage({ params: paramsFromProps }: StagePageProps) {
-  // The `params` object is a Server Component specific API.
-  // In Client Components, it's not directly available.
-  // We assume `paramsFromProps` is correctly passed down if this component
-  // were to be rendered by a Server Component that handles dynamic segments.
-  // If this component is the direct route handler, it might need to use `useParams` from `next/navigation`.
-  // For now, we'll proceed assuming paramsFromProps is correctly populated.
-  const params = paramsFromProps;
+export default function StagePage({}: StagePageProps) {
+  const routeParams = useParams() as { courseId: string; stageId: string };
 
 
-  const course = getCourseById(params.courseId);
-  const stage = getStageById(params.stageId);
+  const course = getCourseById(routeParams.courseId);
+  const stage = getStageById(routeParams.stageId);
 
   const [stageContent, setStageContent] = useState<string | null>(null);
   const [isLoadingContent, setIsLoadingContent] = useState(true);
@@ -55,7 +46,7 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
     notFound();
   }
 
-  const courseStages = getStagesForCourse(params.courseId);
+  const courseStages = getStagesForCourse(routeParams.courseId);
   const currentIndex = courseStages.findIndex(s => s.id === stage.id);
   const prevStage = currentIndex > 0 ? courseStages[currentIndex - 1] : null;
   const nextStage = currentIndex < courseStages.length - 1 ? courseStages[currentIndex + 1] : null;
@@ -188,3 +179,4 @@ export default function StagePage({ params: paramsFromProps }: StagePageProps) {
     </div>
   );
 }
+
