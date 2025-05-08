@@ -1,25 +1,16 @@
+
 import type { Metadata } from 'next';
-import { GeistSans } from 'geist/font/sans'; // Updated import
+import { GeistSans } from 'geist/font/sans';
 import './globals.css';
-
-// const geistSans = Geist({ // Removed, using GeistSans directly
-//   variable: '--font-geist-sans',
-//   subsets: ['latin'],
-// });
-
-// const geistMono = Geist_Mono({ // Removed, not explicitly used in this design
-//   variable: '--font-geist-mono',
-//   subsets: ['latin'],
-// });
 
 export const metadata: Metadata = {
   title: {
-    default: 'CourseFlow - Learn Interactively',
+    default: 'CourseFlow - インタラクティブ学習プラットフォーム',
     template: '%s | CourseFlow',
   },
-  description: 'Interactive learning platform with markdown courses and progress tracking.',
+  description: 'マークダウン形式のコースと進捗追跡機能を備えたインタラクティブな学習プラットフォーム。',
   icons: {
-    icon: "/favicon.ico", // Placeholder, will not generate actual file
+    icon: "/favicon.ico", 
   }
 };
 
@@ -29,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${GeistSans.variable} font-sans antialiased`}> {/* Updated className */}
+    <html lang="ja" suppressHydrationWarning>
+      <body className={`${GeistSans.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

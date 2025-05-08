@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -5,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRightCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProgress } from '@/lib/types';
-import { completeStage as apiCompleteStage, getProgressForStage } from '@/lib/mock-data'; // Using mock API
+import { completeStage as apiCompleteStage, getProgressForStage } from '@/lib/mock-data'; 
 import { mockUser } from '@/lib/mock-data';
 
 interface CompletionButtonProps {
   stageId: string;
-  userId: string; // This would typically come from auth context
+  userId: string; 
   onComplete?: (progress: UserProgress) => void;
   nextStageId?: string | null;
   courseId: string;
@@ -34,29 +35,29 @@ export function CompletionButton({ stageId, userId, onComplete, nextStageId, cou
   const handleComplete = async () => {
     if (isCompleted) {
       if (nextStageId) {
-        // Navigate to next stage (actual navigation handled by Link in parent)
-        console.log("Navigating to next stage:", nextStageId);
+        
+        console.log("次のステージへ移動:", nextStageId);
       }
       return;
     }
 
     setIsLoading(true);
     try {
-      const progress = apiCompleteStage(userId, stageId); // Mock API call
+      const progress = apiCompleteStage(userId, stageId); 
       setIsCompleted(true);
       if (onComplete) {
         onComplete(progress);
       }
       toast({
-        title: "Stage Complete!",
-        description: "Congratulations on completing this stage.",
+        title: "ステージ完了！",
+        description: "このステージのクリアおめでとうございます。",
         variant: "default",
       });
     } catch (error) {
-      console.error("Failed to mark stage as complete:", error);
+      console.error("ステージ完了マーク付け失敗:", error);
       toast({
-        title: "Error",
-        description: "Could not mark stage as complete. Please try again.",
+        title: "エラー",
+        description: "ステージを完了としてマークできませんでした。もう一度お試しください。",
         variant: "destructive",
       });
     } finally {
@@ -64,29 +65,29 @@ export function CompletionButton({ stageId, userId, onComplete, nextStageId, cou
     }
   };
 
-  if (isLoading && !isCompleted) { // Only show skeleton if not initially completed
-    return <Button disabled className="w-full md:w-auto min-w-[200px] h-12 text-lg animate-pulse">Loading...</Button>;
+  if (isLoading && !isCompleted) { 
+    return <Button disabled className="w-full md:w-auto min-w-[200px] h-12 text-lg animate-pulse">読み込み中...</Button>;
   }
 
   return (
     <Button 
       onClick={handleComplete} 
-      disabled={isLoading && !isCompleted} // disable while loading initial state and not yet completed
+      disabled={isLoading && !isCompleted} 
       className="w-full md:w-auto min-w-[200px] h-12 text-lg"
-      variant={isCompleted ? "default" : "default"} // Use accent for primary action
+      variant={isCompleted ? "default" : "default"} 
       aria-live="polite"
     >
       {isCompleted ? (
         <>
           <CheckCircle2 className="mr-2 h-5 w-5" />
-          Stage Completed!
+          ステージ完了！
           {nextStageId && (
-            <span className="ml-2 opacity-80">(Next <ArrowRightCircle className="inline h-4 w-4"/>)</span>
+            <span className="ml-2 opacity-80">(次へ <ArrowRightCircle className="inline h-4 w-4"/>)</span>
           )}
         </>
       ) : (
         <>
-          <CheckCircle2 className="mr-2 h-5 w-5" /> Mark as Complete
+          <CheckCircle2 className="mr-2 h-5 w-5" /> 完了としてマーク
         </>
       )}
     </Button>

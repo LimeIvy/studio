@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Course } from '@/lib/types';
@@ -44,8 +45,8 @@ export function CourseCard({ course }: CourseCardProps) {
         {course.totalStages !== undefined && (
           <div className="mt-auto">
             <div className="flex justify-between items-center text-xs text-muted-foreground mb-1">
-              <span>Progress</span>
-              <span>{course.completedStages ?? 0} / {course.totalStages} stages</span>
+              <span>進捗</span>
+              <span>{course.completedStages ?? 0} / {course.totalStages} ステージ</span>
             </div>
             <Progress value={progressPercentage} className="w-full h-2" />
           </div>
@@ -56,11 +57,11 @@ export function CourseCard({ course }: CourseCardProps) {
           <Link href={`/courses/${course.id}`}>
             {progressPercentage === 100 ? (
               <>
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Review Course
+                <CheckCircle2 className="mr-2 h-4 w-4" /> コースを復習
               </>
             ) : (
               <>
-                <BookOpen className="mr-2 h-4 w-4" /> Start Learning
+                <BookOpen className="mr-2 h-4 w-4" /> 学習を開始
               </>
             )}
           </Link>

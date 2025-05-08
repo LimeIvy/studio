@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Edit, Trash2, ArrowRightLeft } from "lucide-react";
@@ -8,11 +9,11 @@ export default function AdminPage() {
       <section>
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Admin Dashboard</h1>
-            <p className="text-lg text-muted-foreground">Manage courses, stages, and their connections.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">管理ダッシュボード</h1>
+            <p className="text-lg text-muted-foreground">コース、ステージ、およびそれらの接続を管理します。</p>
           </div>
           <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Course
+            <PlusCircle className="mr-2 h-4 w-4" /> 新規コースを追加
           </Button>
         </div>
       </section>
@@ -22,13 +23,13 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5 text-primary" />
-              Manage Courses
+              コース管理
             </CardTitle>
-            <CardDescription>Add, edit, or delete existing courses.</CardDescription>
+            <CardDescription>既存のコースを追加、編集、または削除します。</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Currently <strong>3</strong> courses available.</p>
-            <Button variant="outline" className="mt-4 w-full">View Courses</Button>
+            <p className="text-sm text-muted-foreground">現在 <strong>3</strong> コース利用可能です。</p>
+            <Button variant="outline" className="mt-4 w-full">コース一覧</Button>
           </CardContent>
         </Card>
 
@@ -36,13 +37,13 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5 text-primary" />
-              Manage Stages
+              ステージ管理
             </CardTitle>
-            <CardDescription>Add, edit, or delete stages within courses. Upload Markdown files.</CardDescription>
+            <CardDescription>コース内のステージを追加、編集、または削除します。マークダウンファイルをアップロードします。</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Currently <strong>12</strong> stages across all courses.</p>
-            <Button variant="outline" className="mt-4 w-full">View Stages</Button>
+            <p className="text-sm text-muted-foreground">現在、全コースで <strong>12</strong> ステージあります。</p>
+            <Button variant="outline" className="mt-4 w-full">ステージ一覧</Button>
           </CardContent>
         </Card>
 
@@ -50,13 +51,13 @@ export default function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
                <ArrowRightLeft className="h-5 w-5 text-primary" />
-              Manage Stage Links
+              ステージリンク管理
             </CardTitle>
-            <CardDescription>Define the flow between stages using a visual editor (e.g., React Flow).</CardDescription>
+            <CardDescription>ビジュアルエディタ（例：React Flow）を使用してステージ間のフローを定義します。</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">Currently <strong>9</strong> stage links defined.</p>
-             <Button variant="outline" className="mt-4 w-full">Edit Links</Button>
+            <p className="text-sm text-muted-foreground">現在 <strong>9</strong> 個のステージリンクが定義されています。</p>
+             <Button variant="outline" className="mt-4 w-full">リンクを編集</Button>
           </CardContent>
         </Card>
       </section>
@@ -64,11 +65,11 @@ export default function AdminPage() {
       <section>
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Overview of recent changes and completions.</CardDescription>
+            <CardTitle>最近のアクティビティ</CardTitle>
+            <CardDescription>最近の変更と完了の概要。</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Admin activity log will be displayed here.</p>
+            <p className="text-muted-foreground">管理者のアクティビティログはここに表示されます。</p>
             {/* Placeholder for activity feed */}
           </CardContent>
         </Card>

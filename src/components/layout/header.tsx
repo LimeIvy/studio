@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -5,15 +6,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu, Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
-import { mockUser } from '@/lib/mock-data'; // Using mock user for now
+import { mockUser } from '@/lib/mock-data'; 
 
 export function Header() {
-  // In a real app, user data would come from auth context or session
+  
   const user = mockUser; 
 
   const navItems = [
-    { href: '/', label: 'Courses' },
-    { href: '/admin', label: 'Admin Dashboard' },
+    { href: '/', label: 'コース一覧' },
+    { href: '/admin', label: '管理ダッシュボード' },
   ];
 
   return (
@@ -39,13 +40,13 @@ export function Header() {
           </nav>
         </div>
 
-        {/* Mobile Menu */}
+        
         <div className="md:hidden">
            <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle Menu</span>
+                <span className="sr-only">メニューを開閉</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="pr-0">
@@ -96,23 +97,23 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <LayoutDashboard className="mr-2 h-4 w-4" />
-                  <span>My Progress</span>
+                  <span>マイ進捗</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>設定</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <LogOut className="mr-2 h-4 w-4" />
-                  {/* Replace with actual logout logic */}
-                  <Link href="/login">Logout</Link> 
+                  
+                  <Link href="/login">ログアウト</Link> 
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button asChild>
-              <Link href="/login">Login</Link>
+              <Link href="/login">ログイン</Link>
             </Button>
           )}
         </div>

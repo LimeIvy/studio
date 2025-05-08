@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressForStage } from '@/lib/mock-data';
@@ -34,7 +35,7 @@ export default function StagePage({ params }: StagePageProps) {
         <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
           <li>
             <Link href="/" className="hover:text-primary transition-colors flex items-center">
-              <Home className="h-4 w-4 mr-1.5" /> Courses
+              <Home className="h-4 w-4 mr-1.5" /> コース一覧
             </Link>
           </li>
           <li><span className="mx-1">/</span></li>
@@ -53,7 +54,7 @@ export default function StagePage({ params }: StagePageProps) {
       <Card className="shadow-lg overflow-hidden">
         <CardHeader className="bg-muted/30 p-6 border-b">
           <CardTitle className="text-3xl font-bold tracking-tight text-foreground">{stage.title}</CardTitle>
-          <p className="text-sm text-muted-foreground">Part of: {course.title} - Stage {stage.order}</p>
+          <p className="text-sm text-muted-foreground">コース: {course.title} - ステージ {stage.order}</p>
         </CardHeader>
         <CardContent className="p-6 md:p-8">
           <MarkdownDisplay content={stage.markdownContent} />
@@ -63,7 +64,7 @@ export default function StagePage({ params }: StagePageProps) {
             {prevStage && (
               <Button variant="outline" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}/stages/${prevStage.id}`}>
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                  <ArrowLeft className="mr-2 h-4 w-4" /> 前へ
                 </Link>
               </Button>
             )}
@@ -83,14 +84,14 @@ export default function StagePage({ params }: StagePageProps) {
              {nextStage && isCompleted && (
               <Button variant="default" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}/stages/${nextStage.id}`}>
-                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                  次へ <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             )}
             {!nextStage && isCompleted && (
                <Button variant="default" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}`}>
-                  Back to Course Map
+                  コースマップへ戻る
                 </Link>
               </Button>
             )}

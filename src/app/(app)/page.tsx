@@ -1,3 +1,4 @@
+
 import { CourseCard } from '@/components/core/course-card';
 import { mockCourses, mockUserProgress, mockUser } from '@/lib/mock-data';
 import type { Course } from '@/lib/types';
@@ -19,14 +20,14 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Welcome to CourseFlow!</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">CourseFlowへようこそ！</h1>
         <p className="text-lg text-muted-foreground">
-          Select a course below to start your learning journey.
+          下のコースを選択して、学習の旅を始めましょう。
         </p>
       </section>
       
       <section>
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-6">Available Courses</h2>
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-6">受講可能なコース</h2>
         {coursesWithProgress.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {coursesWithProgress.map((course: Course) => (
@@ -34,7 +35,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">No courses available at the moment. Check back soon!</p>
+          <p className="text-muted-foreground">現在受講可能なコースはありません。しばらくしてから再度ご確認ください。</p>
         )}
       </section>
     </div>

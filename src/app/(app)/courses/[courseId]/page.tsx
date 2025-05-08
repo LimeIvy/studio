@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react'; // React.use is available on React
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser } from '@/lib/mock-data';
@@ -16,28 +16,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MarkdownDisplay } from '@/components/core/markdown-display';
 
-// This interface describes the shape of the resolved params
 interface ResolvedPageParams {
   courseId: string;
 }
 
-// This interface describes the props Next.js passes to the page component
 interface StageMapPageProps {
-  // Next.js runtime error indicates `params` is a Promise.
-  // The declared type might be ResolvedPageParams for convenience,
-  // but React.use expects the actual promise.
   params: ResolvedPageParams;
 }
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  // Correctly unwrap the params. Next.js error indicates `paramsFromProps` is a Promise.
-  // Pass it directly to React.use. Using `as any` to bridge potential type mismatch
-  // if `paramsFromProps` is typed as `ResolvedPageParams` but is a Promise at runtime.
-  const params = React.use(paramsFromProps as any);
+  const params = React.use(Promise.resolve(paramsFromProps));
 
   const course = getCourseById(params.courseId);
 
@@ -87,30 +80,32 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
   }).filter(s => s.isCurrent).sort((a,b) => a.order - b.order);
 
   let buttonTargetStageId: string | null = null;
-  let buttonText = "Start Learning";
+  let buttonText = "学習を開始"; // "Start Learning"
 
   if (allStagesCompleted && stages.length > 0) {
-    buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id; // Ensure we get the first stage by order
-    buttonText = "Review First Stage";
+    buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id;
+    buttonText = "最初のステージを復習"; // "Review First Stage"
   } else if (currentActiveStagesInfo.length > 0) {
     buttonTargetStageId = currentActiveStagesInfo[0].id;
     const firstActiveStage = currentActiveStagesInfo[0];
     const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id));
     buttonText = (firstActiveStage.order === 1 && !firstActiveStage.isCompleted && !userHasStartedCourse)
-                  ? "Start Learning"
-                  : "Continue Learning";
+                  ? "学習を開始" // "Start Learning"
+                  : "学習を続ける"; // "Continue Learning"
   } else if (stages.length > 0) {
-    // If no active stages but course not complete, could mean user jumped or data error. Default to first stage.
-    buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id; // Ensure we get the first stage by order
-    buttonText = "Review Course"; // Or "Start Course" if no progress at all
+    buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id;
+    buttonText = "コースを復習"; // "Review Course"
   }
 
 
   // Modal specific logic
   let modalStageIsCompleted = false;
   let modalStageIsAccessible = false;
-  let modalButtonText = 'View Stage';
+  let modalButtonText = 'ステージを見る'; // 'View Stage'
   let modalButtonDisabled = true;
+  let modalStatusText = 'ロック中'; // 'Locked'
+  let modalStatusVariant: "default" | "outline" | "secondary" | "destructive" | null | undefined = "outline";
+
 
   if (selectedStageForModal) {
       modalStageIsCompleted = !!getProgressForStage(mockUser.id, selectedStageForModal.id);
@@ -128,10 +123,20 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
       }
 
       if (modalStageIsAccessible) {
-          modalButtonText = modalStageIsCompleted ? "Review Stage" : "Start Stage";
+          if (modalStageIsCompleted) {
+            modalButtonText = "ステージを復習"; // "Review Stage"
+            modalStatusText = "完了"; // "Completed"
+            modalStatusVariant = "default"; // Green
+          } else {
+            modalButtonText = "ステージを開始"; // "Start Stage"
+            modalStatusText = "学習可能"; // "Current"
+            modalStatusVariant = "default"; // Blue (primary)
+          }
           modalButtonDisabled = false;
       } else {
-          modalButtonText = "Stage Locked";
+          modalButtonText = "ステージはロック中"; // "Stage Locked"
+          modalStatusText = "ロック中"; // "Locked"
+          modalStatusVariant = "outline";
           modalButtonDisabled = true;
       }
   }
@@ -162,7 +167,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
         <section>
           <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-6 flex items-center">
             <Map className="mr-3 h-6 w-6 text-primary" />
-            Course Map
+            コースマップ
           </h2>
           {stages.length > 0 ? (
             <div
@@ -187,20 +192,16 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                   const x2 = toStage.position.x + STAGE_WIDTH / 2;
                   const y2 = toStage.position.y + STAGE_HEIGHT / 2;
 
-                  // Calculate control point for a slight curve
                   const midX = (x1 + x2) / 2;
                   const midY = (y1 + y2) / 2;
                   const dx = x2 - x1;
                   const dy = y2 - y1;
-                  const curveFactor = 0.2; // Adjust for more or less curve
+                  const curveFactor = 0.2;
                   const ctrlX = midX - dy * curveFactor;
                   const ctrlY = midY + dx * curveFactor;
 
-
-                  // Arrowhead definition
                   const arrowId = `arrow-${link.id}`;
-                   const markerSize = isFromCompleted ? 6 : 4;
-
+                  const markerSize = isFromCompleted ? 6 : 4;
 
                   return (
                     <g key={link.id}>
@@ -212,7 +213,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           refX={markerSize * 0.75}
                           refY={markerSize * 0.75}
                           orient="auto"
-                          markerUnits="userSpaceOnUse" // Ensures consistent sizing
+                          markerUnits="userSpaceOnUse"
                         >
                           <path d={`M0,0 L0,${markerSize} L${markerSize * 0.75},${markerSize/2} Z`}
                                 className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
@@ -250,13 +251,16 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
                 let cardClass = 'bg-card hover:shadow-md';
                 let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
+                let statusAriaLabel = 'ロック中'; // Locked
 
                 if (isCompleted) {
                   cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
                   icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                  statusAriaLabel = '完了'; // Completed
                 } else if (isCurrent) {
                   cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
                   icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
+                  statusAriaLabel = '学習可能'; // Current
                 } else {
                   cardClass = 'bg-muted border-border';
                 }
@@ -277,12 +281,12 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                         height: `${STAGE_HEIGHT}px`,
                         zIndex: 10,
                       }}
-                      aria-label={`Stage ${stage.order}: ${stage.title}. Status: ${isCompleted ? 'Completed' : isCurrent ? 'Current' : 'Locked'}`}
+                      aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                     >
                       <CardContent className="p-3 flex flex-col justify-center items-center h-full text-center">
                           {icon}
                           <h3 className="text-sm font-medium leading-tight break-words mt-1">
-                            Stage {stage.order}: {stage.title}
+                            ステージ {stage.order}: {stage.title}
                           </h3>
                       </CardContent>
                     </Card>
@@ -291,29 +295,33 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
               })}
             </div>
           ) : (
-            <p className="text-muted-foreground">No stages defined for this course yet.</p>
+            <p className="text-muted-foreground">このコースにはまだステージが定義されていません。</p>
           )}
         </section>
 
         {selectedStageForModal && (
           <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
-              <DialogTitle className="text-2xl">Stage {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
-              <div className="text-sm text-muted-foreground pt-1">
-                 {modalStageIsCompleted ? (
-                    <Badge variant="default" className="bg-green-600 hover:bg-green-700">Completed</Badge>
-                ) : modalStageIsAccessible ? (
-                    <Badge variant="default" className="bg-primary hover:bg-primary/90">Current</Badge>
-                ) : (
-                    <Badge variant="outline">Locked</Badge>
-                )}
-              </div>
+              <DialogTitle className="text-2xl">ステージ {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
+              <DialogDescription asChild>
+                <div className="text-sm text-muted-foreground pt-1">
+                   <Badge 
+                    variant={modalStatusVariant}
+                    className={cn(
+                        modalStageIsCompleted && "bg-green-600 hover:bg-green-700",
+                        modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90"
+                    )}
+                   >
+                    {modalStatusText}
+                   </Badge>
+                </div>
+              </DialogDescription>
             </DialogHeader>
             <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent py-4">
               <MarkdownDisplay content={selectedStageForModal.markdownContent} />
             </div>
             <DialogFooter className="mt-auto pt-4 border-t">
-              <Button variant="outline" onClick={() => setSelectedStageForModal(null)}>Close</Button>
+              <Button variant="outline" onClick={() => setSelectedStageForModal(null)}>閉じる</Button>
               <Button asChild disabled={modalButtonDisabled}>
                 <Link href={`/courses/${course.id}/stages/${selectedStageForModal.id}`}>
                   {modalButtonText}
