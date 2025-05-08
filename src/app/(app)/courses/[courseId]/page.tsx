@@ -28,7 +28,7 @@ interface StageMapPageProps {
 
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  const params = useNextParams() as { courseId: string };
+  const params = useNextParams() as { courseId: string }; // For client components, use useNextParams
 
   const course = getCourseById(params.courseId);
 
@@ -271,7 +271,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                 width={mapWidth}
                 height={mapHeight}
                 className="absolute top-0 left-0 pointer-events-none"
-                style={{ zIndex: 0 }} // SVG layer
+                style={{ zIndex: 0 }} // SVG layer below cards
                 aria-hidden="true"
               >
                 {links.map(link => {
@@ -280,59 +280,96 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                   if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
 
                   const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
+                  const markerSize = isFromCompleted ? 7 : 5; // Slightly larger marker for completed
+                  const strokeWidth = isFromCompleted ? 2.5 : 2;
 
-                  const x1 = fromStage.position.x + STAGE_WIDTH / 2;
-                  const y1 = fromStage.position.y + STAGE_HEIGHT / 2;
-                  const x2 = toStage.position.x + STAGE_WIDTH / 2;
-                  const y2 = toStage.position.y + STAGE_HEIGHT / 2;
+                  // Center of the 'from' stage card
+                  const x1_center = fromStage.position.x + STAGE_WIDTH / 2;
+                  const y1_center = fromStage.position.y + STAGE_HEIGHT / 2;
+
+                  // Center of the 'to' stage card
+                  const x2_center = toStage.position.x + STAGE_WIDTH / 2;
+                  const y2_center = toStage.position.y + STAGE_HEIGHT / 2;
+
+                  // Calculate line start and end points (edges of the cards)
+                  // Line starts from the right edge of 'from' stage
+                  let x1 = fromStage.position.x + STAGE_WIDTH;
+                  let y1 = y1_center;
+                  // Line ends at the left edge of 'to' stage
+                  let x2 = toStage.position.x;
+                  let y2 = y2_center;
+
+                  // Adjust if stages are in the same column (vertical connection)
+                  if (Math.abs(x1_center - x2_center) < COL_SPACING / 2) {
+                    x1 = x1_center;
+                    x2 = x2_center;
+                    if (y1_center < y2_center) { // From is above To
+                      y1 = fromStage.position.y + STAGE_HEIGHT;
+                      y2 = toStage.position.y;
+                    } else { // From is below To
+                      y1 = fromStage.position.y;
+                      y2 = toStage.position.y + STAGE_HEIGHT;
+                    }
+                  }
+
 
                   const dx = (x2 - x1);
                   const dy = (y2 - y1);
-                  const curveStrength = 0.3;
+                  
+                  const arrowId = `arrow-${link.id}`;
 
-                  let ctrlX1 = x1 + dx * curveStrength;
-                  let ctrlY1 = y1;
-                  let ctrlX2 = x2 - dx * curveStrength;
-                  let ctrlY2 = y2;
+                  // Calculate the point on the edge of the 'to' stage card for the arrow tip
+                  let endX = x2;
+                  let endY = y2;
 
-                  if (Math.abs(dx) < STAGE_WIDTH * 0.5 && Math.abs(dy) > STAGE_HEIGHT * 0.5) {
-                    ctrlX1 = x1 + dx * 0.5 + Math.sign(dx+0.01) * COL_SPACING * 0.2;
-                    ctrlY1 = y1 + dy * 0.4;
-                    ctrlX2 = x2 - dx * 0.5 - Math.sign(dx+0.01) * COL_SPACING * 0.2;
-                    ctrlY2 = y2 - dy * 0.4;
-                  } else {
-                    ctrlX1 = x1 + dx * 0.4;
-                    ctrlY1 = y1 + dy * 0.1;
-                    ctrlX2 = x2 - dx * 0.4;
-                    ctrlY2 = y2 - dy * 0.1;
+                  // Path for the line (slightly different from arrow placement logic)
+                  // The path should go from edge to edge.
+                  const pathX1 = x1;
+                  const pathY1 = y1;
+                  const pathX2 = x2;
+                  const pathY2 = y2;
+
+
+                  // Control points for bezier curve (simple horizontal curve for now)
+                  let ctrlX1 = pathX1 + dx * 0.4;
+                  let ctrlY1 = pathY1;
+                  let ctrlX2 = pathX2 - dx * 0.4;
+                  let ctrlY2 = pathY2;
+
+                  // If stages are not directly side-by-side or top-bottom, make a more pronounced curve
+                  if (Math.abs(dx) > STAGE_WIDTH * 1.5 && Math.abs(dy) > STAGE_HEIGHT * 0.5) {
+                    ctrlY1 = pathY1 + dy * 0.3;
+                    ctrlY2 = pathY2 - dy * 0.3;
+                  } else if (Math.abs(dy) > STAGE_HEIGHT * 1.5 && Math.abs(dx) > STAGE_WIDTH * 0.5) {
+                     ctrlX1 = pathX1 + dx * 0.3;
+                     ctrlX2 = pathX2 - dx * 0.3;
                   }
 
-                  const arrowId = `arrow-${link.id}`;
-                  const markerSize = isFromCompleted ? 6 : 4;
 
                   return (
                     <g key={link.id}>
                        <defs>
                         <marker
                           id={arrowId}
-                          markerWidth={markerSize * 1.5}
-                          markerHeight={markerSize * 1.5}
-                          refX={markerSize * (isFromCompleted ? 0.9 : 0.8) }
-                          refY={markerSize * 0.75}
+                          markerWidth={markerSize}
+                          markerHeight={markerSize}
+                          refX={markerSize / 2} // Center the arrow tip
+                          refY={markerSize / 2}
                           orient="auto-start-reverse"
                           markerUnits="userSpaceOnUse"
                         >
-                          <path d={`M0,${markerSize/4} L0,${markerSize*0.75} L${markerSize * 0.75},${markerSize/2} Z`}
+                          {/* Simple triangle arrow */}
+                          <path d={`M0,0 L${markerSize},${markerSize/2} L0,${markerSize} Z`}
                                 className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
                         </marker>
                       </defs>
                       <path
-                        d={`M ${x1} ${y1} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${x2} ${y2}`}
+                        d={`M ${pathX1} ${pathY1} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${endX} ${endY}`}
                         className={cn(
                           "transition-all duration-500",
                           isFromCompleted ? "stroke-primary" : "stroke-border"
                         )}
-                        strokeWidth="2.5"
+                        strokeWidth={strokeWidth}
                         fill="none"
                         strokeDasharray={isFromCompleted ? "none" : "5,5"}
                         markerEnd={`url(#${arrowId})`}
@@ -393,7 +430,6 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           top: `${stage.position.y}px`,
                           width: `${STAGE_WIDTH}px`,
                           height: `${STAGE_HEIGHT}px`,
-                          // Individual zIndex removed, parent div controls stacking over SVG
                         }}
                         aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                       >
