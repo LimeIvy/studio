@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -27,12 +26,12 @@ interface ResolvedPageParams {
 }
 
 // This interface describes the props Next.js passes to the page component
-interface StageMapPageProps { // Renamed from StageMapPageServerProps for clarity
-  params: ResolvedPageParams; // params is now directly the resolved object
+interface StageMapPageProps { 
+  params: ResolvedPageParams; 
 }
 
-export default function StageMapPage({ params }: StageMapPageProps) {
-  // params is now of type ResolvedPageParams, i.e., { courseId: string }
+export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
+  const params = React.use(Promise.resolve(rawParams));
   const course = getCourseById(params.courseId);
   
   if (!course) {
@@ -50,14 +49,14 @@ export default function StageMapPage({ params }: StageMapPageProps) {
 
   // Determine map dimensions
   const STAGE_WIDTH = 180; 
-  const STAGE_HEIGHT = 100; // Reduced height for simpler card
+  const STAGE_HEIGHT = 100; 
   const PADDING = 50; 
 
   const mapWidth = stages.length > 0 
     ? Math.max(...stages.map(s => s.position.x + STAGE_WIDTH)) + PADDING
     : PADDING * 2;
   const mapHeight = stages.length > 0
-    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING * 2 // Added more bottom padding
+    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING * 2 
     : PADDING * 2;
   
   // Logic for the main "Start/Continue Learning" button
@@ -66,10 +65,9 @@ export default function StageMapPage({ params }: StageMapPageProps) {
   let currentActiveStagesInfo = stages.map(stage => {
     const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
     let isAccessible = false;
-    if (stage.order === 1) { // The first stage is always accessible
+    if (stage.order === 1) { 
         isAccessible = true;
     } else {
-        // A stage is accessible if any of its prerequisite stages are completed
         const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
         for (const link of incomingLinks) {
             if (getProgressForStage(mockUser.id, link.from_stage_id)) {
@@ -85,19 +83,17 @@ export default function StageMapPage({ params }: StageMapPageProps) {
   let buttonText = "Start Learning";
 
   if (allStagesCompleted && stages.length > 0) {
-    buttonTargetStageId = stages[0].id; // Review first stage if all completed
+    buttonTargetStageId = stages[0].id; 
     buttonText = "Review First Stage";
   } else if (currentActiveStagesInfo.length > 0) {
     buttonTargetStageId = currentActiveStagesInfo[0].id;
-    const firstActiveStage = currentActiveStagesInfo[0]; // This object has .isCompleted
-    // Check if any stage has been completed to determine if user "started" the course
-    const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id)); // Corrected logic
+    const firstActiveStage = currentActiveStagesInfo[0]; 
+    const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id)); 
     buttonText = (firstActiveStage.order === 1 && !firstActiveStage.isCompleted && !userHasStartedCourse)
                   ? "Start Learning" 
                   : "Continue Learning";
   } else if (stages.length > 0) { 
-    // If no current active stages (e.g. a gap in the map or all done), default to first stage
-    buttonTargetStageId = stages[0].id; // Fallback to first stage
+    buttonTargetStageId = stages[0].id; 
     buttonText = "Review Course";
   }
 
@@ -111,10 +107,9 @@ export default function StageMapPage({ params }: StageMapPageProps) {
   if (selectedStageForModal) {
       modalStageIsCompleted = !!getProgressForStage(mockUser.id, selectedStageForModal.id);
       
-      if (selectedStageForModal.order === 1) { // First stage always accessible
+      if (selectedStageForModal.order === 1) { 
           modalStageIsAccessible = true;
       } else {
-          // A stage is accessible if any of its prerequisite stages are completed
           const incomingLinksToModalStage = links.filter(l => l.to_stage_id === selectedStageForModal!.id);
           for (const link of incomingLinksToModalStage) {
               if (getProgressForStage(mockUser.id, link.from_stage_id)) {
@@ -128,7 +123,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
           modalButtonText = modalStageIsCompleted ? "Review Stage" : "Start Stage";
           modalButtonDisabled = false;
       } else {
-          modalButtonText = "Stage Locked"; // Text for locked stages
+          modalButtonText = "Stage Locked"; 
           modalButtonDisabled = true;
       }
   }
@@ -184,29 +179,57 @@ export default function StageMapPage({ params }: StageMapPageProps) {
                   const x2 = toStage.position.x + STAGE_WIDTH / 2;
                   const y2 = toStage.position.y + STAGE_HEIGHT / 2;
 
+                  // Calculate control point for a slight curve
+                  const midX = (x1 + x2) / 2;
+                  const midY = (y1 + y2) / 2;
+                  const dx = x2 - x1;
+                  const dy = y2 - y1;
+                  const curveFactor = 0.2; // Adjust for more or less curve
+                  const ctrlX = midX - dy * curveFactor;
+                  const ctrlY = midY + dx * curveFactor;
+
+
+                  // Arrowhead definition
+                  const arrowId = `arrow-${link.id}`;
+                   const markerSize = isFromCompleted ? 6 : 4;
+
+
                   return (
-                    <line
-                      key={link.id}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      className={cn(
-                        "transition-all duration-500",
-                        isFromCompleted ? "stroke-primary" : "stroke-border" // Line color based on source completion
-                      )}
-                      strokeWidth="3"
-                      strokeDasharray={isFromCompleted ? "none" : "6,4"} // Dashed if source not completed
-                    />
+                    <g key={link.id}>
+                       <defs>
+                        <marker
+                          id={arrowId}
+                          markerWidth={markerSize * 1.5} 
+                          markerHeight={markerSize * 1.5}
+                          refX={markerSize * 0.75} 
+                          refY={markerSize * 0.75}
+                          orient="auto"
+                          markerUnits="userSpaceOnUse" // Ensures consistent sizing
+                        >
+                          <path d={`M0,0 L0,${markerSize} L${markerSize * 0.75},${markerSize/2} Z`} 
+                                className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
+                        </marker>
+                      </defs>
+                      <path
+                        d={`M${x1},${y1} Q${ctrlX},${ctrlY} ${x2},${y2}`}
+                        className={cn(
+                          "transition-all duration-500",
+                          isFromCompleted ? "stroke-primary" : "stroke-border" 
+                        )}
+                        strokeWidth="2.5"
+                        fill="none"
+                        strokeDasharray={isFromCompleted ? "none" : "5,5"} 
+                        markerEnd={`url(#${arrowId})`}
+                      />
+                    </g>
                   );
                 })}
               </svg>
 
               {stages.map(stage => {
                 const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
-                let isAccessible = stage.order === 1; // First stage always accessible
+                let isAccessible = stage.order === 1; 
                 if (!isAccessible) {
-                  // Check if any prerequisite stage is completed
                   const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
                   for (const link of incomingLinks) {
                       if (getProgressForStage(mockUser.id, link.from_stage_id)) {
@@ -217,9 +240,8 @@ export default function StageMapPage({ params }: StageMapPageProps) {
                 }
                 const isCurrent = isAccessible && !isCompleted;
 
-                // Define card appearance based on state
                 let cardClass = 'bg-card hover:shadow-md';
-                let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />; // Default to locked
+                let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />; 
 
                 if (isCompleted) {
                   cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
@@ -227,8 +249,8 @@ export default function StageMapPage({ params }: StageMapPageProps) {
                 } else if (isCurrent) {
                   cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
                   icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
-                } else { // Locked (not completed and not current/accessible)
-                  cardClass = 'bg-muted border-border hover:shadow-md'; 
+                } else { 
+                  cardClass = 'bg-muted border-border'; // Removed hover effect for locked, non-transparent
                 }
                 
                 if (!stage.position) return null;
@@ -245,7 +267,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
                         top: `${stage.position.y}px`,
                         width: `${STAGE_WIDTH}px`,
                         height: `${STAGE_HEIGHT}px`,
-                        zIndex: 10, // Ensure cards are above lines
+                        zIndex: 10, 
                       }}
                       aria-label={`Stage ${stage.order}: ${stage.title}. Status: ${isCompleted ? 'Completed' : isCurrent ? 'Current' : 'Locked'}`}
                     >
@@ -269,7 +291,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
           <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="text-2xl">Stage {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
-              <DialogDescription>
+              <div className="text-sm text-muted-foreground pt-1">
                 {modalStageIsCompleted ? (
                     <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">Completed</Badge>
                 ) : modalStageIsAccessible ? (
@@ -277,9 +299,9 @@ export default function StageMapPage({ params }: StageMapPageProps) {
                 ) : (
                     <Badge variant="outline">Locked</Badge>
                 )}
-              </DialogDescription>
+              </div>
             </DialogHeader>
-            <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent py-4">
               <MarkdownDisplay content={selectedStageForModal.markdownContent} />
             </div>
             <DialogFooter className="mt-auto pt-4 border-t">
@@ -297,3 +319,4 @@ export default function StageMapPage({ params }: StageMapPageProps) {
     </div>
   );
 }
+
