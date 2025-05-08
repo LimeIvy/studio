@@ -1,15 +1,15 @@
 
 "use client";
+import React, { useState } from 'react'; // React must be imported to use React.use
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser } from '@/lib/mock-data';
 import type { Stage } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card'; // Renamed CardDescription to avoid conflict
+import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -21,13 +21,22 @@ import {
 } from "@/components/ui/dialog";
 import { MarkdownDisplay } from '@/components/core/markdown-display';
 
-interface StageMapPageProps {
-  params: {
-    courseId: string;
-  };
+// This interface describes the shape of the resolved params
+interface ResolvedPageParams {
+  courseId: string;
 }
 
-export default function StageMapPage({ params }: StageMapPageProps) {
+// This interface describes the props Next.js passes to the page component
+interface StageMapPageServerProps {
+  params: Promise<ResolvedPageParams>; // params is a Promise
+}
+
+export default function StageMapPage({ params: paramsPromise }: StageMapPageServerProps) {
+  // Unwrap the promise using React.use()
+  // This hook can be used in Client Components.
+  const params = React.use(paramsPromise);
+
+  // Now 'params' is of type ResolvedPageParams, i.e., { courseId: string }
   const course = getCourseById(params.courseId);
   
   if (!course) {
@@ -56,7 +65,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
     : PADDING * 2;
   
   // Logic for the main "Start/Continue Learning" button
-  const allStagesCompleted = stages.every(s => getProgressForStage(mockUser.id, s.id));
+  const allStagesCompleted = stages.every(s => !!getProgressForStage(mockUser.id, s.id));
   
   let currentActiveStagesInfo = stages.map(stage => {
     const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
@@ -84,9 +93,9 @@ export default function StageMapPage({ params }: StageMapPageProps) {
     buttonText = "Review First Stage";
   } else if (currentActiveStagesInfo.length > 0) {
     buttonTargetStageId = currentActiveStagesInfo[0].id;
-    const firstActiveStage = currentActiveStagesInfo[0];
+    const firstActiveStage = currentActiveStagesInfo[0]; // This object has .isCompleted
     // Check if any stage has been completed to determine if user "started" the course
-    const userHasStartedCourse = stages.some(s => s.isCompleted);
+    const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id)); // Corrected logic
     buttonText = (firstActiveStage.order === 1 && !firstActiveStage.isCompleted && !userHasStartedCourse)
                   ? "Start Learning" 
                   : "Continue Learning";
@@ -110,7 +119,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
           modalStageIsAccessible = true;
       } else {
           // A stage is accessible if any of its prerequisite stages are completed
-          const incomingLinksToModalStage = links.filter(l => l.to_stage_id === selectedStageForModal.id);
+          const incomingLinksToModalStage = links.filter(l => l.to_stage_id === selectedStageForModal!.id);
           for (const link of incomingLinksToModalStage) {
               if (getProgressForStage(mockUser.id, link.from_stage_id)) {
                   modalStageIsAccessible = true;
