@@ -1,15 +1,15 @@
-
 "use client";
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react'; // Import useEffect and useState
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Globe, Users, Home, Settings, LayoutDashboard, PlusCircle, BookOpen } from 'lucide-react';
+import { Globe, Users, Settings, LayoutDashboard, PlusCircle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { mockUser, getUserTeams } from '@/lib/mock-data';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const mainNavItems = [
   { href: '/public-courses', label: '公開コース', icon: Globe },
@@ -18,51 +18,86 @@ const mainNavItems = [
 
 const bottomNavItems = [
    { href: '/admin', label: '管理', icon: LayoutDashboard },
-   { href: '#', label: '設定', icon: Settings }, // Placeholder
+   { href: '/#', label: '設定', icon: Settings }, // Placeholder
 ];
 
 
 export function AppSidebar() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const userTeams = getUserTeams(mockUser.id).filter(team => team.members.some(m => m.userId === mockUser.id && (m.role === 'leader' || m.role === 'editor')));
 
-  // State for dynamic variants based on searchParams
+  const userTeams = useMemo(() => {
+    if (!isClient) return []; // Avoid running this on server if getUserTeams has side-effects (it shouldn't with mock data)
+    return getUserTeams(mockUser.id).filter(team => team.members.some(m => m.userId === mockUser.id && (m.role === 'leader' || m.role === 'editor')));
+  }, [isClient]);
+
   const [publicCourseCreationVariant, setPublicCourseCreationVariant] = useState<'secondary' | 'ghost'>('ghost');
   const [teamCourseCreationVariants, setTeamCourseCreationVariants] = useState<Record<string, 'secondary' | 'ghost'>>({});
 
   useEffect(() => {
-    // Update variant for "公開コースを作成"
-    if (pathname === `/courses/new` && searchParams?.get('target') === 'public') {
-      setPublicCourseCreationVariant('secondary');
-    } else {
-      setPublicCourseCreationVariant('ghost');
-    }
-
-    // Update variants for team-specific course creation
-    const newTeamVariants: Record<string, 'secondary' | 'ghost'> = {};
-    userTeams.forEach(team => {
-      if (pathname === `/courses/new` && searchParams?.get('teamId') === team.id) {
-        newTeamVariants[team.id] = 'secondary';
+    if (isClient) {
+      // Update variant for "公開コースを作成"
+      if (pathname === `/courses/new` && searchParams?.get('target') === 'public') {
+        setPublicCourseCreationVariant('secondary');
       } else {
-        newTeamVariants[team.id] = 'ghost';
+        setPublicCourseCreationVariant('ghost');
       }
-    });
-    setTeamCourseCreationVariants(newTeamVariants);
 
-  }, [pathname, searchParams, userTeams]);
+      // Update variants for team-specific course creation
+      const newTeamVariants: Record<string, 'secondary' | 'ghost'> = {};
+      userTeams.forEach(team => {
+        if (pathname === `/courses/new` && searchParams?.get('teamId') === team.id) {
+          newTeamVariants[team.id] = 'secondary';
+        } else {
+          newTeamVariants[team.id] = 'ghost';
+        }
+      });
+      setTeamCourseCreationVariants(newTeamVariants);
+    }
+  }, [isClient, pathname, searchParams, userTeams]);
 
-  // Determine default open accordion items
-  const getDefaultAccordionOpen = () => {
+  const getDefaultAccordionOpen = useCallback(() => {
+    if (!isClient) return []; // Ensure this only runs client-side
     const openItems = [];
     if (pathname.startsWith('/teams/') && !pathname.startsWith('/teams/new')) {
       openItems.push("teams-navigation");
     }
-    if (pathname === '/courses/new') {
+    if (pathname === '/courses/new' && (searchParams?.get('target') === 'public' || searchParams?.get('teamId'))) {
       openItems.push("course-creation");
     }
     return openItems;
-  };
+  }, [isClient, pathname, searchParams]);
+
+
+  if (!isClient) {
+    return (
+      <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
+        <ScrollArea className="flex-1">
+          <nav className="p-4 space-y-2">
+            <h2 className="px-2 text-lg font-semibold tracking-tight text-foreground">
+              ナビゲーション
+            </h2>
+            {mainNavItems.map((item) => (
+              <Skeleton key={item.href} className="h-10 w-full rounded-md" />
+            ))}
+            <Skeleton className="h-10 w-full mt-2 rounded-md" /> {/* Placeholder for teams accordion */}
+            <Skeleton className="h-10 w-full mt-1 rounded-md" /> {/* Placeholder for course creation accordion */}
+          </nav>
+        </ScrollArea>
+        <div className="p-4 border-t border-border mt-auto">
+          {bottomNavItems.map((item) => (
+            <Skeleton key={item.href} className="h-10 w-full rounded-md mt-1 first:mt-0" />
+          ))}
+        </div>
+      </aside>
+    );
+  }
 
 
   return (
@@ -100,7 +135,7 @@ export function AppSidebar() {
                 </AccordionTrigger>
                 <AccordionContent className="pt-1">
                   <div className="space-y-1 pl-6">
-                    {getUserTeams(mockUser.id).map(team => ( // Show all teams user is part of for navigation
+                    {userTeams.map(team => ( 
                       <Button
                         key={team.id}
                         variant={pathname === `/teams/${team.id}` ? 'secondary' : 'ghost'}
@@ -131,7 +166,7 @@ export function AppSidebar() {
             <AccordionItem value="course-creation" className="border-none">
               <AccordionTrigger className={cn(
                   "py-2 px-3 text-sm font-medium hover:bg-muted hover:no-underline rounded-md",
-                  pathname === '/courses/new' && "bg-muted text-primary"
+                   pathname === '/courses/new' && (searchParams?.get('target') === 'public' || searchParams?.get('teamId')) && "bg-muted text-primary"
               )}>
                  <div className="flex items-center">
                   <BookOpen className="mr-2 h-4 w-4" />
@@ -149,7 +184,7 @@ export function AppSidebar() {
                           公開コースを作成
                         </Link>
                     </Button>
-                    {userTeams.map(team => ( // Only show teams where user can create courses
+                    {userTeams.map(team => ( 
                        <Button
                         key={`create-for-${team.id}`}
                         variant={teamCourseCreationVariants[team.id] || 'ghost'}
@@ -196,3 +231,4 @@ export function AppSidebar() {
     </aside>
   );
 }
+
