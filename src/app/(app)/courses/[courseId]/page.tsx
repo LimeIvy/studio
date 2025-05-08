@@ -23,13 +23,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 interface StageMapPageProps {
-  // Params are no longer passed as props directly to client components in App Router
-  // We will use `useParams` hook instead
+  params: { courseId: string };
 }
 
 
-export default function StageMapPage({}: StageMapPageProps) {
-  const params = useNextParams() as { courseId: string }; // Use hook to get params
+export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
+  const params = useNextParams() as { courseId: string }; // Use hook to get params if preferred, or use prop
 
   const course = getCourseById(params.courseId);
 
@@ -377,7 +376,7 @@ export default function StageMapPage({}: StageMapPageProps) {
                   icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
                   statusAriaLabel = '完了';
                 } else if (isCurrent) {
-                  cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg animate-pulse-slow';
+                  cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg'; // Removed animate-pulse-slow
                   icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
                   statusAriaLabel = '学習可能';
                 }
@@ -455,3 +454,4 @@ export default function StageMapPage({}: StageMapPageProps) {
     </div>
   );
 }
+
