@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
@@ -273,6 +272,7 @@ export default function StageMapPage({}: StageMapPageProps) {
                 width={mapWidth}
                 height={mapHeight}
                 className="absolute top-0 left-0 pointer-events-none"
+                style={{ zIndex: 0 }} // Explicitly set SVG z-index lower than cards
                 aria-hidden="true"
               >
                 {links.map(link => {
@@ -396,7 +396,7 @@ export default function StageMapPage({}: StageMapPageProps) {
                         top: `${stage.position.y}px`,
                         width: `${STAGE_WIDTH}px`,
                         height: `${STAGE_HEIGHT}px`,
-                        zIndex: 10,
+                        zIndex: 10, // Ensure cards are above the SVG
                       }}
                       aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                     >
