@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react'; // Import useEffect and useState
 import { cn } from '@/lib/utils';
 import { Globe, Users, Home, Settings, LayoutDashboard, PlusCircle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,44 @@ export function AppSidebar() {
   const searchParams = useSearchParams();
   const userTeams = getUserTeams(mockUser.id).filter(team => team.members.some(m => m.userId === mockUser.id && (m.role === 'leader' || m.role === 'editor')));
 
+  // State for dynamic variants based on searchParams
+  const [publicCourseCreationVariant, setPublicCourseCreationVariant] = useState<'secondary' | 'ghost'>('ghost');
+  const [teamCourseCreationVariants, setTeamCourseCreationVariants] = useState<Record<string, 'secondary' | 'ghost'>>({});
+
+  useEffect(() => {
+    // Update variant for "公開コースを作成"
+    if (pathname === `/courses/new` && searchParams?.get('target') === 'public') {
+      setPublicCourseCreationVariant('secondary');
+    } else {
+      setPublicCourseCreationVariant('ghost');
+    }
+
+    // Update variants for team-specific course creation
+    const newTeamVariants: Record<string, 'secondary' | 'ghost'> = {};
+    userTeams.forEach(team => {
+      if (pathname === `/courses/new` && searchParams?.get('teamId') === team.id) {
+        newTeamVariants[team.id] = 'secondary';
+      } else {
+        newTeamVariants[team.id] = 'ghost';
+      }
+    });
+    setTeamCourseCreationVariants(newTeamVariants);
+
+  }, [pathname, searchParams, userTeams]);
+
+  // Determine default open accordion items
+  const getDefaultAccordionOpen = () => {
+    const openItems = [];
+    if (pathname.startsWith('/teams/') && !pathname.startsWith('/teams/new')) {
+      openItems.push("teams-navigation");
+    }
+    if (pathname === '/courses/new') {
+      openItems.push("course-creation");
+    }
+    return openItems;
+  };
+
+
   return (
     <aside className="hidden md:flex flex-col w-64 bg-card border-r border-border h-screen sticky top-0">
       <ScrollArea className="flex-1">
@@ -48,7 +87,7 @@ export function AppSidebar() {
           ))}
 
           {userTeams.length > 0 && (
-             <Accordion type="multiple" className="w-full">
+             <Accordion type="multiple" className="w-full" defaultValue={getDefaultAccordionOpen()}>
               <AccordionItem value="teams-navigation" className="border-none">
                 <AccordionTrigger className={cn(
                   "py-2 px-3 text-sm font-medium hover:bg-muted hover:no-underline rounded-md",
@@ -88,7 +127,7 @@ export function AppSidebar() {
               </AccordionItem>
             </Accordion>
           )}
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue={getDefaultAccordionOpen().includes("course-creation") ? "course-creation" : undefined}>
             <AccordionItem value="course-creation" className="border-none">
               <AccordionTrigger className={cn(
                   "py-2 px-3 text-sm font-medium hover:bg-muted hover:no-underline rounded-md",
@@ -102,7 +141,7 @@ export function AppSidebar() {
               <AccordionContent className="pt-1">
                  <div className="space-y-1 pl-6">
                     <Button
-                        variant={pathname === `/courses/new` && searchParams?.get('target') === 'public' ? 'secondary' : 'ghost'}
+                        variant={publicCourseCreationVariant}
                         className="w-full justify-start h-8 text-xs"
                         asChild
                       >
@@ -113,7 +152,7 @@ export function AppSidebar() {
                     {userTeams.map(team => ( // Only show teams where user can create courses
                        <Button
                         key={`create-for-${team.id}`}
-                        variant={pathname === `/courses/new` && searchParams?.get('teamId') === team.id ? 'secondary' : 'ghost'}
+                        variant={teamCourseCreationVariants[team.id] || 'ghost'}
                         className="w-full justify-start h-8 text-xs"
                         asChild
                       >
