@@ -7,7 +7,7 @@ import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForSta
 import type { Stage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, FileType } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, FileType, Users, Globe, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -29,8 +29,8 @@ interface StageMapPageProps {
 
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  const params = useNextParams() as { courseId: string }; 
-  // const params = React.use(Promise.resolve(paramsFromProps)); // Avoid React.use for now due to potential issues in some environments/versions
+  const params = useNextParams() as { courseId: string };
+  // const params = React.use(Promise.resolve(paramsFromProps)); // Avoid React.use for now due to potential issues
 
   const course = getCourseById(params.courseId);
 
@@ -59,7 +59,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
           setIsLoadingModalContent(false);
         });
     } else {
-      setModalContent(null); 
+      setModalContent(null);
     }
   }, [selectedStageForModal]);
 
@@ -74,8 +74,8 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
   const STAGE_HEIGHT = 80;
   const PADDING_X = 50; // Horizontal padding within the SVG
   const PADDING_Y = 50; // Vertical padding within the SVG
-  const ROW_SPACING = STAGE_HEIGHT + 40; 
-  const COL_SPACING = STAGE_WIDTH + 70; 
+  const ROW_SPACING = STAGE_HEIGHT + 40;
+  const COL_SPACING = STAGE_WIDTH + 70;
 
   const maxCols = stages.reduce((max, s) => {
     if (!s.position) return max;
@@ -87,15 +87,15 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     if (!s.position) return max;
     return Math.max(max, Math.floor((s.position.y - PADDING_Y) / ROW_SPACING) +1);
   }, 0);
-  
+
 
   const mapWidth = stages.length > 0
     ? PADDING_X * 2 + Math.max(0, maxCols - 1) * COL_SPACING + STAGE_WIDTH
-    : PADDING_X * 2 + STAGE_WIDTH; 
+    : PADDING_X * 2 + STAGE_WIDTH;
 
   const mapHeight = stages.length > 0
     ? PADDING_Y * 2 + Math.max(0, maxRows -1) * ROW_SPACING + STAGE_HEIGHT
-    : PADDING_Y * 2 + STAGE_HEIGHT; 
+    : PADDING_Y * 2 + STAGE_HEIGHT;
 
 
   // Logic for the main "Start/Continue Learning" button
@@ -245,7 +245,15 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">{course.title}</h1>
+              <div className="flex items-center gap-2 mb-2">
+                {course.mode === 'public' ? <Globe className="h-6 w-6 text-blue-600" /> : <Users className="h-6 w-6 text-purple-600" />}
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">{course.title}</h1>
+                {course.mode === 'public' && course.price !== undefined && (
+                  <Badge variant={course.price > 0 ? "destructive" : "default"} className={course.price > 0 ? "bg-accent" : "bg-blue-600"}>
+                     {course.price > 0 ? `¥${course.price.toLocaleString()}` : '無料'}
+                  </Badge>
+                )}
+              </div>
               <CourseCardDescription className="text-lg text-muted-foreground">{course.description}</CourseCardDescription>
             </div>
             {buttonTargetStageId && (
@@ -269,14 +277,14 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
           {stages.length > 0 ? (
             <div className="w-full overflow-x-auto rounded-lg border bg-card p-4 shadow-sm">
               <div
-                className="relative mx-auto" 
+                className="relative mx-auto"
                 style={{ width: `${mapWidth}px`, height: `${mapHeight}px` }}
               >
                 <svg
                   width={mapWidth}
                   height={mapHeight}
                   className="absolute top-0 left-0 pointer-events-none"
-                  style={{ zIndex: 0 }} 
+                  style={{ zIndex: 0 }}
                   aria-hidden="true"
                 >
                   {links.map(link => {
@@ -285,14 +293,14 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                     if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
 
                     const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
-                    const markerSize = isFromCompleted ? 7 : 5; 
+                    const markerSize = isFromCompleted ? 7 : 5;
                     const strokeWidth = isFromCompleted ? 2.5 : 2;
 
                     const x1_center = fromStage.position.x + STAGE_WIDTH / 2;
                     const y1_center = fromStage.position.y + STAGE_HEIGHT / 2;
                     const x2_center = toStage.position.x + STAGE_WIDTH / 2;
                     const y2_center = toStage.position.y + STAGE_HEIGHT / 2;
-                    
+
                     const arrowId = `arrow-${link.id}`;
 
                     let pathX1 = x1_center;
@@ -304,50 +312,44 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                     const dy = y2_center - y1_center;
                     const angle = Math.atan2(dy, dx);
 
-                    const offsetX = Math.cos(angle) * (STAGE_WIDTH / 2 + 2); // +2 for small gap
-                    const offsetY = Math.sin(angle) * (STAGE_HEIGHT / 2 + 2); // +2 for small gap
+                    const offsetX = Math.cos(angle) * (STAGE_WIDTH / 2 + 2);
+                    const offsetY = Math.sin(angle) * (STAGE_HEIGHT / 2 + 2);
 
                     if (Math.abs(dx) > Math.abs(dy)) { // More horizontal
                         pathX1 = x1_center + (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
-                        pathY1 = y1_center + Math.tan(angle) * (pathX1 - x1_center);
-                        pathX2 = x2_center - (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
-                        pathY2 = y2_center - Math.tan(angle) * (x2_center - pathX2);
+                        pathY1 = y1_center; // Keep Y at center for horizontal exits
+                        pathX2 = x2_center - (dx > 0 ? STAGE_WIDTH / 2 + markerSize : -(STAGE_WIDTH / 2 + markerSize)); // Adjust for marker
+                        pathY2 = y2_center; // Keep Y at center for horizontal entries
                     } else { // More vertical
                         pathY1 = y1_center + (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
-                        pathX1 = x1_center + (pathY1 - y1_center) / Math.tan(angle);
-                        pathY2 = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
-                        pathX2 = x2_center - (y2_center - pathY2) / Math.tan(angle);
+                        pathX1 = x1_center; // Keep X at center for vertical exits
+                        pathY2 = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 + markerSize : -(STAGE_HEIGHT / 2 + markerSize)); // Adjust for marker
+                        pathX2 = x2_center; // Keep X at center for vertical entries
                     }
-                    // Clamp end points to be within target card boundaries
-                    pathX2 = Math.max(toStage.position.x, Math.min(pathX2, toStage.position.x + STAGE_WIDTH));
-                    pathY2 = Math.max(toStage.position.y, Math.min(pathY2, toStage.position.y + STAGE_HEIGHT));
-
 
                     let ctrlX1 = pathX1;
                     let ctrlY1 = pathY1;
                     let ctrlX2 = pathX2;
                     let ctrlY2 = pathY2;
 
-                    // Straight line if stages are in the same row or same column (approximately)
                     const isSameRow = Math.abs(y1_center - y2_center) < ROW_SPACING / 2;
                     const isSameCol = Math.abs(x1_center - x2_center) < COL_SPACING / 2;
-                    
-                    // Specific fix for course-1, stage-1-4 to stage-1-5
+
                     const isUnity4to5 = fromStage.id === 'stage-1-4' && toStage.id === 'stage-1-5';
 
+
                     if (isSameRow || isSameCol || isUnity4to5) {
-                      // Use linear path (handled by M pathX1 pathY1 L pathX2 pathY2 as default for simple C)
                       ctrlX1 = (pathX1 + pathX2) / 2;
                       ctrlY1 = (pathY1 + pathY2) / 2;
                       ctrlX2 = ctrlX1;
                       ctrlY2 = ctrlY1;
-                    } else { // S-curve for diagonal connections
-                        if (Math.abs(dx) > Math.abs(dy)) { // More horizontal S-curve
+                    } else {
+                        if (Math.abs(dx) > Math.abs(dy)) {
                             ctrlX1 = pathX1 + dx * 0.4;
                             ctrlY1 = pathY1;
                             ctrlX2 = pathX2 - dx * 0.4;
                             ctrlY2 = pathY2;
-                        } else { // More vertical S-curve
+                        } else {
                             ctrlX1 = pathX1;
                             ctrlY1 = pathY1 + dy * 0.4;
                             ctrlX2 = pathX2;
@@ -362,7 +364,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                             id={arrowId}
                             markerWidth={markerSize}
                             markerHeight={markerSize}
-                            refX={markerSize} 
+                            refX={markerSize}
                             refY={markerSize/2}
                             orient="auto-start-reverse"
                             markerUnits="userSpaceOnUse"
@@ -407,7 +409,6 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           }
                        }
                     }
-                    const isCurrent = isAccessible && !isCompleted;
 
                     let cardClass = 'border-border bg-card hover:shadow-md';
                     let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
@@ -417,7 +418,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                       cardClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 hover:shadow-lg';
                       icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
                       statusAriaLabel = '完了';
-                    } else if (isAccessible) { // Changed from isCurrent to isAccessible
+                    } else if (isAccessible) {
                       cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg';
                       icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
                       statusAriaLabel = '学習可能';
@@ -438,7 +439,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                             top: `${stage.position.y}px`,
                             width: `${STAGE_WIDTH}px`,
                             height: `${STAGE_HEIGHT}px`,
-                            zIndex: 10, 
+                            zIndex: 10,
                           }}
                           aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                         >
@@ -453,7 +454,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                       </DialogTrigger>
                     );
                   })}
-                </div> 
+                </div>
               </div>
             </div>
           ) : (
@@ -475,7 +476,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                         modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
                    >
-                    {modalStatusText} ({selectedStageForModal.fileType.toUpperCase()})
+                     <span className='capitalize'>{modalStatusText}</span> ({selectedStageForModal.fileType.toUpperCase()})
                    </Badge>
                 </div>
               </DialogDescription>
@@ -498,4 +499,3 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
-

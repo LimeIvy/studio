@@ -4,23 +4,22 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Settings, LogOut, LayoutDashboard, BookOpen } from 'lucide-react';
+import { Menu, Settings, LogOut, LayoutDashboard, Users, Globe } from 'lucide-react';
 import { LogoIcon } from '@/components/icons/logo-icon';
-import { mockUser } from '@/lib/mock-data'; 
+import { mockUser } from '@/lib/mock-data';
 import { cn } from '@/lib/utils';
 
 export function Header() {
-  
-  const user = mockUser; 
+  const user = mockUser;
 
   const navItems = [
-    { href: '/', label: 'コース一覧', icon: BookOpen },
-    { href: '/admin', label: '管理ダッシュボード', icon: LayoutDashboard },
+    { href: '/public-courses', label: '公開コース', icon: Globe },
+    { href: '/team-hub', label: 'チームハブ', icon: Users },
   ];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto flex h-16 items-center max-w-full px-4 sm:px-6 lg:px-8"> {/* Changed max-w-7xl to max-w-full */}
         {/* Desktop Navigation */}
         <div className="mr-auto hidden md:flex items-center">
           <Link href="/" className="mr-6 flex items-center space-x-2 group">
@@ -29,22 +28,10 @@ export function Header() {
               CourseFlow
             </span>
           </Link>
-          <nav className="flex items-center space-x-2">
-            {navItems.map((item) => (
-              <Button variant="ghost" asChild key={item.label}>
-                <Link
-                  href={item.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors px-3 py-2"
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </Link>
-              </Button>
-            ))}
-          </nav>
+          {/* Desktop nav items are now in AppSidebar */}
         </div>
 
-        {/* Mobile Navigation Trigger */}
+        {/* Mobile Navigation Trigger - now primarily for AppSidebar */}
         <div className="md:hidden mr-auto">
            <Sheet>
             <SheetTrigger asChild>
@@ -59,7 +46,7 @@ export function Header() {
                 <span className="font-bold text-xl tracking-tight text-foreground">CourseFlow</span>
               </Link>
               <div className="space-y-1 p-4">
-                {navItems.map((item) => (
+                {navItems.map((item) => ( // These could also be part of a mobile-specific AppSidebar content
                   <Button variant="ghost" asChild key={item.label} className="w-full justify-start">
                     <Link
                       href={item.href}
@@ -70,15 +57,24 @@ export function Header() {
                     </Link>
                   </Button>
                 ))}
+                 <DropdownMenuSeparator />
+                 <Button variant="ghost" asChild className="w-full justify-start">
+                    <Link
+                      href="/admin"
+                      className="flex items-center px-3 py-3 text-base font-medium rounded-md text-foreground hover:bg-muted hover:text-primary"
+                    >
+                       <LayoutDashboard className="mr-3 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      管理
+                    </Link>
+                  </Button>
               </div>
             </SheetContent>
           </Sheet>
         </div>
         
-        {/* Mobile Centered Logo (only visible when menu is closed) */}
         <Link href="/" className="flex items-center space-x-2 md:hidden absolute left-1/2 -translate-x-1/2">
             <LogoIcon className="h-7 w-7 text-primary" />
-            <span className="font-bold text-xl tracking-tight text-foreground">CourseFlow</span>
+            <span className="font-bold text-xl tracking-tight text-foreground md:hidden">CourseFlow</span>
         </Link>
 
 
@@ -105,10 +101,10 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="#" className="cursor-pointer">
+                 <DropdownMenuItem asChild>
+                  <Link href="/admin" className="cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span>マイ進捗</span>
+                    <span>管理ダッシュボード</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -121,7 +117,7 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/login" className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>ログアウト</span> 
+                    <span>ログアウト</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

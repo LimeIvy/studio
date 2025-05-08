@@ -1,5 +1,5 @@
 
-import type { Course, Stage, StageLink, UserProgress, User } from './types';
+import type { Course, Stage, StageLink, UserProgress, User, Team, TeamMember } from './types';
 
 export const mockUser: User = {
   id: 'user-123',
@@ -8,6 +8,32 @@ export const mockUser: User = {
   avatarUrl: 'https://picsum.photos/seed/alex/100/100',
 };
 
+export const mockTeams: Team[] = [
+  {
+    id: 'team-1',
+    name: 'Acme大学 研究室',
+    description: 'Acme大学の先端技術研究室の学習チームです。',
+    leaderId: 'user-123',
+    members: [
+      { userId: 'user-123', role: 'leader' },
+      { userId: 'user-456', role: 'editor' },
+      { userId: 'user-789', role: 'member' },
+    ],
+    created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
+  },
+  {
+    id: 'team-2',
+    name: 'スタートアップ・インキュベーター',
+    description: '次世代のイノベーターを育成するプログラム。',
+    leaderId: 'user-alpha',
+    members: [
+      { userId: 'user-alpha', role: 'leader' },
+      { userId: 'user-123', role: 'member' }, // mockUser is also a member here
+    ],
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
+  }
+];
+
 export const mockCourses: Course[] = [
   {
     id: 'course-1',
@@ -15,34 +41,59 @@ export const mockCourses: Course[] = [
     description: 'Unityの基本を学び、簡単なゲームを作成します。',
     created_at: new Date().toISOString(),
     imageUrl: 'https://picsum.photos/seed/unity/600/400',
-    totalStages: 18, // Updated count
+    totalStages: 18, 
     completedStages: 1,
+    mode: 'public',
+    price: 1000,
+    creatorId: 'user-creator-unity',
+    isPublished: true,
   },
   {
     id: 'course-2',
-    title: 'Ruby入門',
-    description: 'Rubyプログラミングの基礎からWebアプリケーション開発まで。',
+    title: 'Ruby入門 (チーム限定)',
+    description: 'Rubyプログラミングの基礎からWebアプリケーション開発まで。Acme大学研究室専用。',
     created_at: new Date().toISOString(),
     imageUrl: 'https://picsum.photos/seed/ruby/600/400',
     totalStages: 4,
     completedStages: 0,
+    mode: 'team',
+    teamId: 'team-1',
+    creatorId: 'user-123', // Team leader created this
+    isPublished: true, // For team courses, published means visible to team
   },
   {
     id: 'course-3',
-    title: 'Next.js と Firebase',
-    description: 'モダンなWebアプリケーション開発を実践的に学びます。',
+    title: 'Next.js と Firebase (公開)',
+    description: 'モダンなWebアプリケーション開発を実践的に学びます。どなたでも受講可能です。',
     created_at: new Date().toISOString(),
     imageUrl: 'https://picsum.photos/seed/nextjs/600/400',
     totalStages: 5,
-    completedStages: 3,
+    completedStages: 3, // Specific to mockUser
+    mode: 'public',
+    price: 0, // Free public course
+    creatorId: 'user-123',
+    isPublished: true,
   },
+  {
+    id: 'course-4',
+    title: '機械学習プロジェクト (チーム用)',
+    description: 'スタートアップ・インキュベーターのチーム向け実践プロジェクトコース。',
+    created_at: new Date().toISOString(),
+    imageUrl: 'https://picsum.photos/seed/mlteam/600/400',
+    totalStages: 7, // Placeholder
+    completedStages: 0,
+    mode: 'team',
+    teamId: 'team-2',
+    creatorId: 'user-alpha',
+    isPublished: true,
+  }
 ];
 
 // Positioning constants
 const BASE_X = 50;
 const BASE_Y = 50;
-const COL_SPACING = 270; 
-const ROW_SPACING = 120; 
+const COL_SPACING = 270;
+const ROW_SPACING = 120;
 const STAGES_PER_ROW = 4;
 
 
@@ -66,7 +117,7 @@ const calculatePositions = (stages: Stage[], courseId: string): Stage[] => {
 
 
 const rawStages: Omit<Stage, 'position'>[] = [
-  // Unity入門 Stages
+  // Unity入門 Stages (course-1)
   {
     id: 'stage-1-1',
     course_id: 'course-1',
@@ -688,7 +739,7 @@ Unityでのデバッグ方法とパフォーマンス最適化のためのプロ
 `,
   },
 
-  // Ruby入門 Stages
+  // Ruby入門 Stages (course-2)
   {
     id: 'stage-2-1',
     course_id: 'course-2',
@@ -832,7 +883,7 @@ puts even_numbers.inspect # => [2, 4, 6]
 `,
     order: 4,
   },
-  // Next.js と Firebase Stages
+  // Next.js と Firebase Stages (course-3)
   {
     id: 'stage-3-1',
     course_id: 'course-3',
@@ -878,13 +929,24 @@ puts even_numbers.inspect # => [2, 4, 6]
     markdownContent: '# Firebase Hostingデプロイ\n\n作成したアプリケーションをFirebase Hostingにデプロイします。',
     order: 5,
   },
+
+  // Machine Learning Project Stages (course-4)
+  { id: 'stage-4-1', course_id: 'course-4', title: 'プロジェクト概要と目標設定', fileType: 'md', filePath: 'ml-project/01-overview.md', markdownContent: '# プロジェクト概要と目標設定\n\nこの機械学習プロジェクトの全体像と達成目標を明確にします。', order: 1 },
+  { id: 'stage-4-2', course_id: 'course-4', title: 'データ収集と前処理', fileType: 'md', filePath: 'ml-project/02-data-preprocessing.md', markdownContent: '# データ収集と前処理\n\nモデル学習に必要なデータの収集方法と、クリーニング・整形手順を学びます。', order: 2 },
+  { id: 'stage-4-3', course_id: 'course-4', title: 'モデル選択と基礎理論', fileType: 'md', filePath: 'ml-project/03-model-selection.md', markdownContent: '# モデル選択と基礎理論\n\nプロジェクトに適した機械学習モデルを選択し、その背景理論を理解します。', order: 3 },
+  { id: 'stage-4-4', course_id: 'course-4', title: 'モデル学習と評価 (PDF)', fileType: 'pdf', filePath: 'references/ml_training_evaluation.pdf', markdownContent: 'モデルの学習プロセスと、その性能を評価するための指標について解説したPDF資料です。', order: 4 },
+  { id: 'stage-4-5', course_id: 'course-4', title: 'ハイパーパラメータ調整', fileType: 'md', filePath: 'ml-project/05-hyperparameter-tuning.md', markdownContent: '# ハイパーパラメータ調整\n\nモデルの性能を最大限に引き出すためのハイパーパラメータ調整テクニックを学びます。', order: 5 },
+  { id: 'stage-4-6', course_id: 'course-4', title: '結果の解釈と報告', fileType: 'md', filePath: 'ml-project/06-results-reporting.md', markdownContent: '# 結果の解釈と報告\n\n学習結果を正しく解釈し、効果的な報告書を作成する方法を身につけます。', order: 6 },
+  { id: 'stage-4-7', course_id: 'course-4', title: 'デプロイ戦略の検討', fileType: 'md', filePath: 'ml-project/07-deployment-strategy.md', markdownContent: '# デプロイ戦略の検討\n\n完成したモデルを実際の運用環境にデプロイするための戦略を検討します。', order: 7 },
+
 ];
 
 
 export const mockStages: Stage[] = [
-  ...calculatePositions(rawStages as Stage[], 'course-1'),
-  ...calculatePositions(rawStages as Stage[], 'course-2'),
-  ...calculatePositions(rawStages as Stage[], 'course-3'),
+  ...calculatePositions(rawStages.filter(s => s.course_id === 'course-1') as Stage[], 'course-1'),
+  ...calculatePositions(rawStages.filter(s => s.course_id === 'course-2') as Stage[], 'course-2'),
+  ...calculatePositions(rawStages.filter(s => s.course_id === 'course-3') as Stage[], 'course-3'),
+  ...calculatePositions(rawStages.filter(s => s.course_id === 'course-4') as Stage[], 'course-4'),
 ];
 
 
@@ -893,7 +955,7 @@ export const mockStageLinks: StageLink[] = [
   { id: 'link-1-1-2', from_stage_id: 'stage-1-1', to_stage_id: 'stage-1-2' },
   { id: 'link-1-2-3', from_stage_id: 'stage-1-2', to_stage_id: 'stage-1-3' },
   { id: 'link-1-3-4', from_stage_id: 'stage-1-3', to_stage_id: 'stage-1-4' },
-  { id: 'link-1-4-5', from_stage_id: 'stage-1-4', to_stage_id: 'stage-1-5' }, 
+  { id: 'link-1-4-5', from_stage_id: 'stage-1-4', to_stage_id: 'stage-1-5' },
   { id: 'link-1-5-6', from_stage_id: 'stage-1-5', to_stage_id: 'stage-1-6' },
   { id: 'link-1-6-7', from_stage_id: 'stage-1-6', to_stage_id: 'stage-1-7' },
   { id: 'link-1-7-8', from_stage_id: 'stage-1-7', to_stage_id: 'stage-1-8' },
@@ -907,42 +969,50 @@ export const mockStageLinks: StageLink[] = [
   { id: 'link-1-15-16pdf', from_stage_id: 'stage-1-15', to_stage_id: 'stage-1-16-pdf' },
   { id: 'link-1-16pdf-17', from_stage_id: 'stage-1-16-pdf', to_stage_id: 'stage-1-17' },
   { id: 'link-1-17-18', from_stage_id: 'stage-1-17', to_stage_id: 'stage-1-18' },
-  
+
   // Ruby Links
   { id: 'link-2-1-2', from_stage_id: 'stage-2-1', to_stage_id: 'stage-2-2' },
   { id: 'link-2-2-3', from_stage_id: 'stage-2-2', to_stage_id: 'stage-2-3' },
   { id: 'link-2-3-4', from_stage_id: 'stage-2-3', to_stage_id: 'stage-2-4' },
-  
+
   // Next.js and Firebase Links
   { id: 'link-3-1-2', from_stage_id: 'stage-3-1', to_stage_id: 'stage-3-2' },
   { id: 'link-3-2-3', from_stage_id: 'stage-3-2', to_stage_id: 'stage-3-3' },
   { id: 'link-3-3-4', from_stage_id: 'stage-3-3', to_stage_id: 'stage-3-4' },
   { id: 'link-3-4-5', from_stage_id: 'stage-3-4', to_stage_id: 'stage-3-5' },
+
+  // Machine Learning Project Links
+  { id: 'link-4-1-2', from_stage_id: 'stage-4-1', to_stage_id: 'stage-4-2' },
+  { id: 'link-4-2-3', from_stage_id: 'stage-4-2', to_stage_id: 'stage-4-3' },
+  { id: 'link-4-3-4pdf', from_stage_id: 'stage-4-3', to_stage_id: 'stage-4-4-pdf' },
+  { id: 'link-4-4pdf-5', from_stage_id: 'stage-4-4-pdf', to_stage_id: 'stage-4-5' },
+  { id: 'link-4-5-6', from_stage_id: 'stage-4-5', to_stage_id: 'stage-4-6' },
+  { id: 'link-4-6-7', from_stage_id: 'stage-4-6', to_stage_id: 'stage-4-7' },
 ];
 
 export const mockUserProgress: UserProgress[] = [
   {
     id: 'progress-1',
     user_id: 'user-123',
-    stage_id: 'stage-1-1', 
-    completed_at: new Date(Date.now() - 86400000 * 2).toISOString(), 
+    stage_id: 'stage-1-1',
+    completed_at: new Date(Date.now() - 86400000 * 2).toISOString(),
   },
   {
     id: 'progress-2',
     user_id: 'user-123',
-    stage_id: 'stage-3-1', 
-    completed_at: new Date(Date.now() - 86400000).toISOString(), 
+    stage_id: 'stage-3-1',
+    completed_at: new Date(Date.now() - 86400000).toISOString(),
   },
   {
     id: 'progress-3',
     user_id: 'user-123',
-    stage_id: 'stage-3-2', 
+    stage_id: 'stage-3-2',
     completed_at: new Date().toISOString(),
   },
   {
     id: 'progress-4',
     user_id: 'user-123',
-    stage_id: 'stage-3-3', 
+    stage_id: 'stage-3-3',
     completed_at: new Date().toISOString(),
   },
 ];
@@ -950,6 +1020,38 @@ export const mockUserProgress: UserProgress[] = [
 
 export const getCourseById = (courseId: string): Course | undefined =>
   mockCourses.find(course => course.id === courseId);
+
+export const getPublicCourses = (): Course[] =>
+  mockCourses.filter(course => course.mode === 'public' && course.isPublished);
+
+export const getTeamCoursesForUser = (userId: string): Course[] => {
+  const userTeams = mockTeams.filter(team => team.members.some(m => m.userId === userId));
+  return mockCourses.filter(course =>
+    course.mode === 'team' &&
+    course.teamId &&
+    userTeams.some(team => team.id === course.teamId) &&
+    course.isPublished // or some team-specific visibility logic
+  );
+};
+
+export const getTeamById = (teamId: string): Team | undefined =>
+  mockTeams.find(team => team.id === teamId);
+
+export const getUserTeams = (userId: string): Team[] =>
+  mockTeams.filter(team => team.members.some(member => member.userId === userId));
+
+export const canUserManageCourse = (userId: string, course: Course): boolean => {
+  if (course.mode === 'public') {
+    return course.creatorId === userId;
+  }
+  if (course.mode === 'team' && course.teamId) {
+    const team = getTeamById(course.teamId);
+    if (!team) return false;
+    const member = team.members.find(m => m.userId === userId);
+    return !!member && (member.role === 'leader' || member.role === 'editor');
+  }
+  return false;
+};
 
 
 export const getStagesForCourse = (courseId: string): Stage[] =>
@@ -981,7 +1083,7 @@ export const completeStage = (userId: string, stageId: string): UserProgress => 
     };
     mockUserProgress.push(progress);
   }
-  
+
   const courseIdForStage = mockStages.find(s => s.id === stageId)?.course_id;
   if (courseIdForStage) {
     const course = mockCourses.find(c => c.id === courseIdForStage);

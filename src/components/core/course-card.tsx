@@ -5,7 +5,7 @@ import type { Course } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, CheckCircle2, ArrowRight } from 'lucide-react';
+import { BookOpen, CheckCircle2, ArrowRight, Users, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface CourseCardProps {
@@ -13,10 +13,10 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course }: CourseCardProps) {
-  const progressPercentage = course.totalStages && course.totalStages > 0 
+  const progressPercentage = course.totalStages && course.totalStages > 0
     ? Math.round(((course.completedStages ?? 0) / course.totalStages) * 100)
     : 0;
-  
+
   const isCompleted = progressPercentage === 100;
 
   return (
@@ -32,12 +32,30 @@ export function CourseCard({ course }: CourseCardProps) {
             data-ai-hint="course theme"
           />
         </div>
-        {isCompleted && (
-          <Badge variant="default" className="absolute top-3 right-3 bg-green-600 hover:bg-green-700 text-primary-foreground shadow-md">
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-            完了済
-          </Badge>
-        )}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+          {isCompleted && (
+            <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-primary-foreground shadow-md">
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+              完了済
+            </Badge>
+          )}
+          {course.mode === 'team' && (
+            <Badge variant="secondary" className="bg-primary/80 text-primary-foreground shadow-md">
+              <Users className="h-3.5 w-3.5 mr-1.5" />
+              チーム
+            </Badge>
+          )}
+           {course.mode === 'public' && course.price !== undefined && (
+            <Badge variant={course.price > 0 ? "destructive" : "default"} className={course.price > 0 ? "bg-accent hover:bg-accent/90 text-accent-foreground shadow-md" : "bg-blue-600 hover:bg-blue-700 text-primary-foreground shadow-md"}>
+              {course.price > 0 ? (
+                <>
+                  <DollarSign className="h-3.5 w-3.5 mr-0.5" />
+                  {course.price.toLocaleString()}
+                </>
+              ) : '無料'}
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-5 flex-grow flex flex-col">
         <CardTitle className="text-lg font-semibold mb-1.5 line-clamp-2 group-hover:text-primary transition-colors">
@@ -46,7 +64,7 @@ export function CourseCard({ course }: CourseCardProps) {
         <CardDescription className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-grow">
           {course.description}
         </CardDescription>
-        
+
         {course.totalStages !== undefined && (
           <div className="mt-auto space-y-1.5">
             <div className="flex justify-between items-center text-xs text-muted-foreground">

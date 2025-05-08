@@ -4,7 +4,10 @@ export interface User {
   name: string | null;
   email: string | null;
   avatarUrl?: string | null;
+  // teamMemberships might be derived or checked directly against Team.members for mock data
 }
+
+export type CourseMode = 'public' | 'team';
 
 export interface Course {
   id: string; // UUID
@@ -14,6 +17,11 @@ export interface Course {
   imageUrl?: string; // Optional image for the course card
   totalStages?: number; // Calculated or stored
   completedStages?: number; // Calculated for current user
+  mode: CourseMode;
+  price?: number; // For public courses, 0 or undefined for free
+  creatorId: string; // user.id of the course creator
+  teamId?: string; // team.id, only if mode is 'team'
+  isPublished?: boolean; // For public courses, default true for mock data
 }
 
 export interface Stage {
@@ -38,4 +46,17 @@ export interface UserProgress {
   user_id: string; // UUID
   stage_id: string; // UUID
   completed_at: string; // timestamp
+}
+
+export interface TeamMember {
+  userId: string;
+  role: 'leader' | 'editor' | 'member';
+}
+export interface Team {
+  id: string; // UUID
+  name: string;
+  description?: string;
+  leaderId: string; // user.id
+  members: TeamMember[];
+  created_at: string; // timestamp
 }
