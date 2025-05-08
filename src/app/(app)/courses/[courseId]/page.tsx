@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { notFound, useParams as useNextParams } from 'next/navigation';
 import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser, fetchStageContent } from '@/lib/mock-data';
@@ -28,7 +28,7 @@ interface StageMapPageProps {
 
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  const params = useNextParams() as { courseId: string }; // Use hook to get params if preferred, or use prop
+  const params = useNextParams() as { courseId: string };
 
   const course = getCourseById(params.courseId);
 
@@ -68,12 +68,12 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
   }, {} as Record<string, Stage>);
 
   // Determine map dimensions
-  const STAGE_WIDTH = 200; 
-  const STAGE_HEIGHT = 80; 
+  const STAGE_WIDTH = 200;
+  const STAGE_HEIGHT = 80;
   const PADDING = 50;
   const ROW_SPACING = STAGE_HEIGHT + 40; // Vertical spacing
   const COL_SPACING = STAGE_WIDTH + 70; // Horizontal spacing
-  
+
   // Calculate dynamic map width and height based on content
   const maxCols = stages.reduce((max, s) => {
     if (!s.position) return max;
@@ -85,10 +85,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     return Math.max(max, Math.floor((s.position.y - PADDING) / ROW_SPACING) + 1);
   }, 1);
 
-  const mapWidth = stages.length > 0 
+  const mapWidth = stages.length > 0
     ? PADDING * 2 + (maxCols - 1) * COL_SPACING + STAGE_WIDTH
     : PADDING * 2;
-  
+
   const mapHeight = stages.length > 0
     ? PADDING * 2 + (maxRows - 1) * ROW_SPACING + STAGE_HEIGHT
     : PADDING * 2;
@@ -104,7 +104,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
         isAccessible = true;
     } else {
         const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
-        if (incomingLinks.length === 0 && stage.order !==1) { 
+        if (incomingLinks.length === 0 && stage.order !==1) {
              const previousStageInOrder = stages.find(s => s.order === stage.order -1);
              if (previousStageInOrder && getProgressForStage(mockUser.id, previousStageInOrder.id)) {
                 isAccessible = true;
@@ -271,7 +271,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                 width={mapWidth}
                 height={mapHeight}
                 className="absolute top-0 left-0 pointer-events-none"
-                style={{ zIndex: 0 }} // Explicitly set SVG z-index lower than cards
+                style={{ zIndex: 0 }} // SVG layer
                 aria-hidden="true"
               >
                 {links.map(link => {
@@ -288,28 +288,24 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
                   const dx = (x2 - x1);
                   const dy = (y2 - y1);
-                  const curveStrength = 0.3; 
+                  const curveStrength = 0.3;
 
                   let ctrlX1 = x1 + dx * curveStrength;
                   let ctrlY1 = y1;
                   let ctrlX2 = x2 - dx * curveStrength;
                   let ctrlY2 = y2;
 
-                  // Adjust control points for better curve appearance if stages are vertically aligned or close
-                  if (Math.abs(dx) < STAGE_WIDTH * 0.5 && Math.abs(dy) > STAGE_HEIGHT * 0.5) { // primarily vertical
-                    ctrlX1 = x1 + dx * 0.5 + Math.sign(dx+0.01) * COL_SPACING * 0.2; 
+                  if (Math.abs(dx) < STAGE_WIDTH * 0.5 && Math.abs(dy) > STAGE_HEIGHT * 0.5) {
+                    ctrlX1 = x1 + dx * 0.5 + Math.sign(dx+0.01) * COL_SPACING * 0.2;
                     ctrlY1 = y1 + dy * 0.4;
                     ctrlX2 = x2 - dx * 0.5 - Math.sign(dx+0.01) * COL_SPACING * 0.2;
                     ctrlY2 = y2 - dy * 0.4;
-                  } else if (Math.abs(dy) < STAGE_HEIGHT * 0.5 && Math.abs(dx) > STAGE_WIDTH * 0.5) { // primarily horizontal
-                     // default is okay
-                  } else { // diagonal or close
+                  } else {
                     ctrlX1 = x1 + dx * 0.4;
                     ctrlY1 = y1 + dy * 0.1;
                     ctrlX2 = x2 - dx * 0.4;
                     ctrlY2 = y2 - dy * 0.1;
                   }
-
 
                   const arrowId = `arrow-${link.id}`;
                   const markerSize = isFromCompleted ? 6 : 4;
@@ -321,12 +317,12 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           id={arrowId}
                           markerWidth={markerSize * 1.5}
                           markerHeight={markerSize * 1.5}
-                          refX={markerSize * (isFromCompleted ? 0.9 : 0.8) } 
+                          refX={markerSize * (isFromCompleted ? 0.9 : 0.8) }
                           refY={markerSize * 0.75}
-                          orient="auto-start-reverse" 
+                          orient="auto-start-reverse"
                           markerUnits="userSpaceOnUse"
                         >
-                          <path d={`M0,${markerSize/4} L0,${markerSize*0.75} L${markerSize * 0.75},${markerSize/2} Z`} 
+                          <path d={`M0,${markerSize/4} L0,${markerSize*0.75} L${markerSize * 0.75},${markerSize/2} Z`}
                                 className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
                         </marker>
                       </defs>
@@ -346,70 +342,73 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                 })}
               </svg>
 
-              {stages.map(stage => {
-                const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
-                let isAccessible = stage.order === 1;
-                if (!isAccessible) {
-                  const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
-                   if (incomingLinks.length === 0 && stage.order !==1) {
-                       const previousStageInOrder = stages.find(s => s.order === stage.order -1);
-                       if (previousStageInOrder && getProgressForStage(mockUser.id, previousStageInOrder.id)) {
-                          isAccessible = true;
-                       }
-                   } else {
-                      for (const link of incomingLinks) {
-                          if (getProgressForStage(mockUser.id, link.from_stage_id)) {
-                              isAccessible = true;
-                              break;
-                          }
-                      }
-                   }
-                }
-                const isCurrent = isAccessible && !isCompleted;
+              {/* Wrapper for all stage cards to control their stacking context */}
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                {stages.map(stage => {
+                  const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
+                  let isAccessible = stage.order === 1;
+                  if (!isAccessible) {
+                    const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
+                     if (incomingLinks.length === 0 && stage.order !==1) {
+                         const previousStageInOrder = stages.find(s => s.order === stage.order -1);
+                         if (previousStageInOrder && getProgressForStage(mockUser.id, previousStageInOrder.id)) {
+                            isAccessible = true;
+                         }
+                     } else {
+                        for (const link of incomingLinks) {
+                            if (getProgressForStage(mockUser.id, link.from_stage_id)) {
+                                isAccessible = true;
+                                break;
+                            }
+                        }
+                     }
+                  }
+                  const isCurrent = isAccessible && !isCompleted;
 
-                let cardClass = 'border-border bg-card hover:shadow-md';
-                let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
-                let statusAriaLabel = 'ロック中';
+                  let cardClass = 'border-border bg-card hover:shadow-md';
+                  let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
+                  let statusAriaLabel = 'ロック中';
 
-                if (isCompleted) {
-                  cardClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 hover:shadow-lg';
-                  icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
-                  statusAriaLabel = '完了';
-                } else if (isCurrent) {
-                  cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg'; // Removed animate-pulse-slow
-                  icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
-                  statusAriaLabel = '学習可能';
-                }
+                  if (isCompleted) {
+                    cardClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 hover:shadow-lg';
+                    icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                    statusAriaLabel = '完了';
+                  } else if (isCurrent) {
+                    cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg';
+                    icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
+                    statusAriaLabel = '学習可能';
+                  }
 
-                if (!stage.position) return null;
+                  if (!stage.position) return null;
 
-                return (
-                  <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
-                    <Card
-                      className={cn(
-                        "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer flex flex-col items-center justify-center text-center",
-                        cardClass
-                      )}
-                      style={{
-                        left: `${stage.position.x}px`,
-                        top: `${stage.position.y}px`,
-                        width: `${STAGE_WIDTH}px`,
-                        height: `${STAGE_HEIGHT}px`,
-                        zIndex: 10, // Ensure cards are above the SVG
-                      }}
-                      aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
-                    >
-                      <CardContent className="p-2 flex flex-col justify-center items-center h-full">
-                          {icon}
-                          <h3 className="text-xs font-medium leading-tight break-words mt-1">
-                            ステージ {stage.order}: {stage.title}
-                          </h3>
-                          <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
-                      </CardContent>
-                    </Card>
-                  </DialogTrigger>
-                );
-              })}
+                  return (
+                    <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
+                      <Card
+                        className={cn(
+                          "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer flex flex-col items-center justify-center text-center",
+                          cardClass
+                        )}
+                        style={{
+                          left: `${stage.position.x}px`,
+                          top: `${stage.position.y}px`,
+                          width: `${STAGE_WIDTH}px`,
+                          height: `${STAGE_HEIGHT}px`,
+                          // Individual zIndex removed, parent div controls stacking over SVG
+                        }}
+                        aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
+                      >
+                        <CardContent className="p-2 flex flex-col justify-center items-center h-full">
+                            {icon}
+                            <h3 className="text-xs font-medium leading-tight break-words mt-1">
+                              ステージ {stage.order}: {stage.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
+                        </CardContent>
+                      </Card>
+                    </DialogTrigger>
+                  );
+                })}
+              </div> {/* End of cards wrapper */}
             </div>
           ) : (
             <p className="text-muted-foreground">このコースにはまだステージが定義されていません。</p>
@@ -425,11 +424,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                    <Badge
                     variant={modalStatusVariant}
                     className={cn(
-                        "text-xs", 
+                        "text-xs",
                         modalStageIsCompleted && "bg-green-600 hover:bg-green-700 text-primary-foreground",
                         modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
-                    as="span"
                    >
                     {modalStatusText} ({selectedStageForModal.fileType.toUpperCase()})
                    </Badge>
@@ -454,4 +452,3 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
-
