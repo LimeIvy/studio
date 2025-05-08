@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Globe, Users, Home, Settings, LayoutDashboard, PlusCircle, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ const bottomNavItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const userTeams = getUserTeams(mockUser.id).filter(team => team.members.some(m => m.userId === mockUser.id && (m.role === 'leader' || m.role === 'editor')));
 
   return (
@@ -101,7 +102,7 @@ export function AppSidebar() {
               <AccordionContent className="pt-1">
                  <div className="space-y-1 pl-6">
                     <Button
-                        variant={pathname === `/courses/new` && new URLSearchParams(window.location.search).get('target') === 'public' ? 'secondary' : 'ghost'}
+                        variant={pathname === `/courses/new` && searchParams?.get('target') === 'public' ? 'secondary' : 'ghost'}
                         className="w-full justify-start h-8 text-xs"
                         asChild
                       >
@@ -112,7 +113,7 @@ export function AppSidebar() {
                     {userTeams.map(team => ( // Only show teams where user can create courses
                        <Button
                         key={`create-for-${team.id}`}
-                        variant={pathname === `/courses/new` && new URLSearchParams(window.location.search).get('teamId') === team.id ? 'secondary' : 'ghost'}
+                        variant={pathname === `/courses/new` && searchParams?.get('teamId') === team.id ? 'secondary' : 'ghost'}
                         className="w-full justify-start h-8 text-xs"
                         asChild
                       >
