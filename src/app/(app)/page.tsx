@@ -19,23 +19,25 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
-      <section>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">CourseFlowへようこそ！</h1>
-        <p className="text-lg text-muted-foreground">
-          下のコースを選択して、学習の旅を始めましょう。
+      <section className="text-center mb-12">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground mb-3 sm:text-5xl">CourseFlowへようこそ！</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          下のコースを選択して、学習の旅を始めましょう。インタラクティブなステージと進捗追跡でスキルアップを目指します。
         </p>
       </section>
       
       <section>
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-6">受講可能なコース</h2>
         {coursesWithProgress.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {coursesWithProgress.map((course: Course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">現在受講可能なコースはありません。しばらくしてから再度ご確認ください。</p>
+          <div className="text-center py-12">
+            <p className="text-xl text-muted-foreground">現在受講可能なコースはありません。</p>
+            <p className="text-md text-muted-foreground mt-2">しばらくしてから再度ご確認ください。</p>
+          </div>
         )}
       </section>
     </div>

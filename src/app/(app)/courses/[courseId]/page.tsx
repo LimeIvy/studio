@@ -28,7 +28,7 @@ interface StageMapPageProps {
 
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  const params = useNextParams() as { courseId: string }; // For client components, use useNextParams
+  const params = useNextParams() as { courseId: string }; 
 
   const course = getCourseById(params.courseId);
 
@@ -57,7 +57,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
           setIsLoadingModalContent(false);
         });
     } else {
-      setModalContent(null); // Clear content when modal closes
+      setModalContent(null); 
     }
   }, [selectedStageForModal]);
 
@@ -70,28 +70,32 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
   // Determine map dimensions
   const STAGE_WIDTH = 200;
   const STAGE_HEIGHT = 80;
-  const PADDING = 50;
-  const ROW_SPACING = STAGE_HEIGHT + 40; // Vertical spacing
-  const COL_SPACING = STAGE_WIDTH + 70; // Horizontal spacing
+  const PADDING_X = 50; // Horizontal padding within the SVG
+  const PADDING_Y = 50; // Vertical padding within the SVG
+  const ROW_SPACING = STAGE_HEIGHT + 40; 
+  const COL_SPACING = STAGE_WIDTH + 70; 
 
-  // Calculate dynamic map width and height based on content
   const maxCols = stages.reduce((max, s) => {
     if (!s.position) return max;
-    return Math.max(max, Math.floor((s.position.x - PADDING) / COL_SPACING) + 1);
-  },1);
+    // Calculate column based on position, ensuring it starts from 0
+    return Math.max(max, Math.floor((s.position.x - PADDING_X) / COL_SPACING) +1);
+  },0);
+
 
   const maxRows = stages.reduce((max, s) => {
     if (!s.position) return max;
-    return Math.max(max, Math.floor((s.position.y - PADDING) / ROW_SPACING) + 1);
-  }, 1);
+     // Calculate row based on position, ensuring it starts from 0
+    return Math.max(max, Math.floor((s.position.y - PADDING_Y) / ROW_SPACING) +1);
+  }, 0);
+  
 
   const mapWidth = stages.length > 0
-    ? PADDING * 2 + (maxCols - 1) * COL_SPACING + STAGE_WIDTH
-    : PADDING * 2;
+    ? PADDING_X * 2 + Math.max(0, maxCols - 1) * COL_SPACING + STAGE_WIDTH
+    : PADDING_X * 2 + STAGE_WIDTH; // Default width for empty map
 
   const mapHeight = stages.length > 0
-    ? PADDING * 2 + (maxRows - 1) * ROW_SPACING + STAGE_HEIGHT
-    : PADDING * 2;
+    ? PADDING_Y * 2 + Math.max(0, maxRows -1) * ROW_SPACING + STAGE_HEIGHT
+    : PADDING_Y * 2 + STAGE_HEIGHT; // Default height for empty map
 
 
   // Logic for the main "Start/Continue Learning" button
@@ -263,188 +267,190 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
             コースマップ
           </h2>
           {stages.length > 0 ? (
-            <div
-              className="relative rounded-lg border bg-card p-4 shadow-sm overflow-auto"
-              style={{ minWidth: '100%', width: `${mapWidth}px`, height: `${mapHeight}px` }}
-            >
-              <svg
-                width={mapWidth}
-                height={mapHeight}
-                className="absolute top-0 left-0 pointer-events-none"
-                style={{ zIndex: 0 }} // SVG layer below cards
-                aria-hidden="true"
+            <div className="w-full overflow-x-auto rounded-lg border bg-card p-4 shadow-sm">
+              <div
+                className="relative mx-auto" 
+                style={{ width: `${mapWidth}px`, height: `${mapHeight}px` }}
               >
-                {links.map(link => {
-                  const fromStage = stageMap[link.from_stage_id];
-                  const toStage = stageMap[link.to_stage_id];
-                  if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
+                <svg
+                  width={mapWidth}
+                  height={mapHeight}
+                  className="absolute top-0 left-0 pointer-events-none"
+                  style={{ zIndex: 0 }} 
+                  aria-hidden="true"
+                >
+                  {links.map(link => {
+                    const fromStage = stageMap[link.from_stage_id];
+                    const toStage = stageMap[link.to_stage_id];
+                    if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
 
-                  const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
-                  const markerSize = isFromCompleted ? 7 : 5; // Slightly larger marker for completed
-                  const strokeWidth = isFromCompleted ? 2.5 : 2;
+                    const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
+                    const markerSize = isFromCompleted ? 7 : 5; 
+                    const strokeWidth = isFromCompleted ? 2.5 : 2;
 
-                  // Center of the 'from' stage card
-                  const x1_center = fromStage.position.x + STAGE_WIDTH / 2;
-                  const y1_center = fromStage.position.y + STAGE_HEIGHT / 2;
+                    const x1_center = fromStage.position.x + STAGE_WIDTH / 2;
+                    const y1_center = fromStage.position.y + STAGE_HEIGHT / 2;
+                    const x2_center = toStage.position.x + STAGE_WIDTH / 2;
+                    const y2_center = toStage.position.y + STAGE_HEIGHT / 2;
+                    
+                    const arrowId = `arrow-${link.id}`;
 
-                  // Center of the 'to' stage card
-                  const x2_center = toStage.position.x + STAGE_WIDTH / 2;
-                  const y2_center = toStage.position.y + STAGE_HEIGHT / 2;
+                    // Calculate line start and end points on the card edges
+                    let pathX1 = x1_center;
+                    let pathY1 = y1_center;
+                    let pathX2 = x2_center;
+                    let pathY2 = y2_center;
 
-                  // Calculate line start and end points (edges of the cards)
-                  // Line starts from the right edge of 'from' stage
-                  let x1 = fromStage.position.x + STAGE_WIDTH;
-                  let y1 = y1_center;
-                  // Line ends at the left edge of 'to' stage
-                  let x2 = toStage.position.x;
-                  let y2 = y2_center;
+                    // Simplified edge calculation: from center of source to center of target,
+                    // then adjust to hit the edge. Arrowhead will be on this line.
+                    const dx = x2_center - x1_center;
+                    const dy = y2_center - y1_center;
+                    const angle = Math.atan2(dy, dx);
 
-                  // Adjust if stages are in the same column (vertical connection)
-                  if (Math.abs(x1_center - x2_center) < COL_SPACING / 2) {
-                    x1 = x1_center;
-                    x2 = x2_center;
-                    if (y1_center < y2_center) { // From is above To
-                      y1 = fromStage.position.y + STAGE_HEIGHT;
-                      y2 = toStage.position.y;
-                    } else { // From is below To
-                      y1 = fromStage.position.y;
-                      y2 = toStage.position.y + STAGE_HEIGHT;
+                    // Start point (edge of fromStage)
+                    if (Math.abs(dx) > Math.abs(dy)) { // More horizontal
+                        pathX1 = x1_center + (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
+                        pathY1 = y1_center + Math.tan(angle) * (pathX1 - x1_center);
+                    } else { // More vertical
+                        pathY1 = y1_center + (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
+                        pathX1 = x1_center + (pathY1 - y1_center) / Math.tan(angle);
                     }
-                  }
+                    
+                    // End point for arrow (edge of toStage)
+                    let endX = x2_center - (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2) * Math.cos(angle);
+                    let endY = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2) * Math.sin(angle);
+                    
+                    // Refined end point to ensure it's on the border
+                    if (Math.abs(dx) > Math.abs(dy)) { // More horizontal
+                       endX = x2_center - (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
+                       endY = y2_center - Math.tan(angle) * (x2_center - endX);
+                    } else { // More vertical
+                       endY = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
+                       endX = x2_center - (y2_center - endY) / Math.tan(angle);
+                    }
+                    // Clamp endY/endX if they go significantly off due to extreme angles near corners
+                    endX = Math.max(toStage.position.x, Math.min(endX, toStage.position.x + STAGE_WIDTH));
+                    endY = Math.max(toStage.position.y, Math.min(endY, toStage.position.y + STAGE_HEIGHT));
 
 
-                  const dx = (x2 - x1);
-                  const dy = (y2 - y1);
-                  
-                  const arrowId = `arrow-${link.id}`;
-
-                  // Calculate the point on the edge of the 'to' stage card for the arrow tip
-                  let endX = x2;
-                  let endY = y2;
-
-                  // Path for the line (slightly different from arrow placement logic)
-                  // The path should go from edge to edge.
-                  const pathX1 = x1;
-                  const pathY1 = y1;
-                  const pathX2 = x2;
-                  const pathY2 = y2;
-
-
-                  // Control points for bezier curve (simple horizontal curve for now)
-                  let ctrlX1 = pathX1 + dx * 0.4;
-                  let ctrlY1 = pathY1;
-                  let ctrlX2 = pathX2 - dx * 0.4;
-                  let ctrlY2 = pathY2;
-
-                  // If stages are not directly side-by-side or top-bottom, make a more pronounced curve
-                  if (Math.abs(dx) > STAGE_WIDTH * 1.5 && Math.abs(dy) > STAGE_HEIGHT * 0.5) {
-                    ctrlY1 = pathY1 + dy * 0.3;
-                    ctrlY2 = pathY2 - dy * 0.3;
-                  } else if (Math.abs(dy) > STAGE_HEIGHT * 1.5 && Math.abs(dx) > STAGE_WIDTH * 0.5) {
-                     ctrlX1 = pathX1 + dx * 0.3;
-                     ctrlX2 = pathX2 - dx * 0.3;
-                  }
+                    let ctrlX1 = pathX1 + dx * 0.3;
+                    let ctrlY1 = pathY1;
+                    let ctrlX2 = endX - dx * 0.3;
+                    let ctrlY2 = endY;
+                    
+                    if (Math.abs(dx) < COL_SPACING * 0.5 || Math.abs(dy) < ROW_SPACING * 0.5) { // More direct connection
+                        ctrlX1 = (pathX1 + endX) / 2;
+                        ctrlY1 = (pathY1 + endY) / 2;
+                        ctrlX2 = ctrlX1;
+                        ctrlY2 = ctrlY1;
+                    } else if (Math.abs(dx) > STAGE_WIDTH && Math.abs(dy) > STAGE_HEIGHT * 0.5) { // S-curve for diagonalish
+                      ctrlY1 = pathY1 + dy * 0.4;
+                      ctrlX2 = endX - dx * 0.4;
+                    } else if (Math.abs(dy) > STAGE_HEIGHT && Math.abs(dx) > STAGE_WIDTH * 0.5) {
+                       ctrlX1 = pathX1 + dx * 0.4;
+                       ctrlY2 = endY - dy * 0.4;
+                    }
 
 
-                  return (
-                    <g key={link.id}>
-                       <defs>
-                        <marker
-                          id={arrowId}
-                          markerWidth={markerSize}
-                          markerHeight={markerSize}
-                          refX={markerSize / 2} // Center the arrow tip
-                          refY={markerSize / 2}
-                          orient="auto-start-reverse"
-                          markerUnits="userSpaceOnUse"
+                    return (
+                      <g key={link.id}>
+                         <defs>
+                          <marker
+                            id={arrowId}
+                            markerWidth={markerSize}
+                            markerHeight={markerSize}
+                            refX={markerSize} 
+                            refY={markerSize/2}
+                            orient="auto-start-reverse"
+                            markerUnits="userSpaceOnUse"
+                          >
+                            <path d={`M0,0 L${markerSize},${markerSize/2} L0,${markerSize} Z`}
+                                  className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
+                          </marker>
+                        </defs>
+                        <path
+                          d={`M ${pathX1} ${pathY1} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${endX} ${endY}`}
+                          className={cn(
+                            "transition-all duration-500",
+                            isFromCompleted ? "stroke-primary" : "stroke-border"
+                          )}
+                          strokeWidth={strokeWidth}
+                          fill="none"
+                          strokeDasharray={isFromCompleted ? "none" : "5,5"}
+                          markerEnd={`url(#${arrowId})`}
+                        />
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                <div style={{ position: 'relative', zIndex: 1, width: `${mapWidth}px`, height: `${mapHeight}px` }}>
+                  {stages.map(stage => {
+                    const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
+                    let isAccessible = stage.order === 1;
+                    if (!isAccessible) {
+                      const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
+                       if (incomingLinks.length === 0 && stage.order !==1) {
+                           const previousStageInOrder = stages.find(s => s.order === stage.order -1);
+                           if (previousStageInOrder && getProgressForStage(mockUser.id, previousStageInOrder.id)) {
+                              isAccessible = true;
+                           }
+                       } else {
+                          for (const link of incomingLinks) {
+                              if (getProgressForStage(mockUser.id, link.from_stage_id)) {
+                                  isAccessible = true;
+                                  break;
+                              }
+                          }
+                       }
+                    }
+                    const isCurrent = isAccessible && !isCompleted;
+
+                    let cardClass = 'border-border bg-card hover:shadow-md';
+                    let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
+                    let statusAriaLabel = 'ロック中';
+
+                    if (isCompleted) {
+                      cardClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 hover:shadow-lg';
+                      icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                      statusAriaLabel = '完了';
+                    } else if (isCurrent) {
+                      cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg';
+                      icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
+                      statusAriaLabel = '学習可能';
+                    }
+
+                    if (!stage.position) return null;
+
+                    return (
+                      <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
+                        <Card
+                          className={cn(
+                            "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer flex flex-col items-center justify-center text-center",
+                            cardClass
+                          )}
+                          style={{
+                            left: `${stage.position.x}px`,
+                            top: `${stage.position.y}px`,
+                            width: `${STAGE_WIDTH}px`,
+                            height: `${STAGE_HEIGHT}px`,
+                            zIndex: 10, // Ensure cards are above SVG lines
+                          }}
+                          aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                         >
-                          {/* Simple triangle arrow */}
-                          <path d={`M0,0 L${markerSize},${markerSize/2} L0,${markerSize} Z`}
-                                className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
-                        </marker>
-                      </defs>
-                      <path
-                        d={`M ${pathX1} ${pathY1} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${endX} ${endY}`}
-                        className={cn(
-                          "transition-all duration-500",
-                          isFromCompleted ? "stroke-primary" : "stroke-border"
-                        )}
-                        strokeWidth={strokeWidth}
-                        fill="none"
-                        strokeDasharray={isFromCompleted ? "none" : "5,5"}
-                        markerEnd={`url(#${arrowId})`}
-                      />
-                    </g>
-                  );
-                })}
-              </svg>
-
-              {/* Wrapper for all stage cards to control their stacking context */}
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                {stages.map(stage => {
-                  const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
-                  let isAccessible = stage.order === 1;
-                  if (!isAccessible) {
-                    const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
-                     if (incomingLinks.length === 0 && stage.order !==1) {
-                         const previousStageInOrder = stages.find(s => s.order === stage.order -1);
-                         if (previousStageInOrder && getProgressForStage(mockUser.id, previousStageInOrder.id)) {
-                            isAccessible = true;
-                         }
-                     } else {
-                        for (const link of incomingLinks) {
-                            if (getProgressForStage(mockUser.id, link.from_stage_id)) {
-                                isAccessible = true;
-                                break;
-                            }
-                        }
-                     }
-                  }
-                  const isCurrent = isAccessible && !isCompleted;
-
-                  let cardClass = 'border-border bg-card hover:shadow-md';
-                  let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
-                  let statusAriaLabel = 'ロック中';
-
-                  if (isCompleted) {
-                    cardClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 hover:shadow-lg';
-                    icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
-                    statusAriaLabel = '完了';
-                  } else if (isCurrent) {
-                    cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg';
-                    icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
-                    statusAriaLabel = '学習可能';
-                  }
-
-                  if (!stage.position) return null;
-
-                  return (
-                    <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
-                      <Card
-                        className={cn(
-                          "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer flex flex-col items-center justify-center text-center",
-                          cardClass
-                        )}
-                        style={{
-                          left: `${stage.position.x}px`,
-                          top: `${stage.position.y}px`,
-                          width: `${STAGE_WIDTH}px`,
-                          height: `${STAGE_HEIGHT}px`,
-                        }}
-                        aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
-                      >
-                        <CardContent className="p-2 flex flex-col justify-center items-center h-full">
-                            {icon}
-                            <h3 className="text-xs font-medium leading-tight break-words mt-1">
-                              ステージ {stage.order}: {stage.title}
-                            </h3>
-                            <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
-                        </CardContent>
-                      </Card>
-                    </DialogTrigger>
-                  );
-                })}
-              </div> {/* End of cards wrapper */}
+                          <CardContent className="p-2 flex flex-col justify-center items-center h-full">
+                              {icon}
+                              <h3 className="text-xs font-medium leading-tight break-words mt-1">
+                                ステージ {stage.order}: {stage.title}
+                              </h3>
+                              <p className="text-xs text-muted-foreground">({stage.fileType.toUpperCase()})</p>
+                          </CardContent>
+                        </Card>
+                      </DialogTrigger>
+                    );
+                  })}
+                </div> 
+              </div>
             </div>
           ) : (
             <p className="text-muted-foreground">このコースにはまだステージが定義されていません。</p>

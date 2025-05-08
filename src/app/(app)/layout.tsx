@@ -7,12 +7,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-secondary/50">
       <Header />
-      <main className="flex-1 container py-8">
+      <main className="flex-1 container mx-auto py-8 max-w-7xl px-4 sm:px-6 lg:px-8">
         {children}
       </main>
       <Toaster />
       <footer className="py-6 md:px-8 md:py-0 bg-background border-t">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-20 md:flex-row">
+        <div className="container mx-auto flex flex-col items-center justify-between gap-4 md:h-20 md:flex-row max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-balance text-center text-sm leading-loose text-muted-foreground md:text-left">
             © {new Date().getFullYear()} CourseFlow. 愛情を込めて作られました。
           </p>
@@ -21,3 +21,4 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
+

@@ -3,11 +3,12 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, ArrowRightCircle } from 'lucide-react';
+import { CheckCircle2, ArrowRightCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProgress } from '@/lib/types';
 import { completeStage as apiCompleteStage, getProgressForStage } from '@/lib/mock-data'; 
 import { mockUser } from '@/lib/mock-data';
+import { cn } from '@/lib/utils';
 
 interface CompletionButtonProps {
   stageId: string;
@@ -19,11 +20,13 @@ interface CompletionButtonProps {
 
 export function CompletionButton({ stageId, userId, onComplete, nextStageId, courseId }: CompletionButtonProps) {
   const [isCompleted, setIsCompleted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const checkInitialCompletion = () => {
+      setIsLoading(true);
       const progress = getProgressForStage(userId, stageId);
       setIsCompleted(!!progress);
       setIsLoading(false);
@@ -33,61 +36,77 @@ export function CompletionButton({ stageId, userId, onComplete, nextStageId, cou
   
 
   const handleComplete = async () => {
-    if (isCompleted) {
-      if (nextStageId) {
-        
-        console.log("次のステージへ移動:", nextStageId);
-      }
+    if (isCompleted || isSubmitting) {
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 700));
       const progress = apiCompleteStage(userId, stageId); 
       setIsCompleted(true);
       if (onComplete) {
         onComplete(progress);
       }
       toast({
-        title: "ステージ完了！",
-        description: "このステージのクリアおめでとうございます。",
+        title: "ステージ完了！ 🎉",
+        description: "おめでとうございます！このステージをクリアしました。",
         variant: "default",
+        duration: 5000,
       });
     } catch (error) {
       console.error("ステージ完了マーク付け失敗:", error);
       toast({
-        title: "エラー",
+        title: "エラーが発生しました",
         description: "ステージを完了としてマークできませんでした。もう一度お試しください。",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  if (isLoading && !isCompleted) { 
-    return <Button disabled className="w-full md:w-auto min-w-[200px] h-12 text-lg animate-pulse">読み込み中...</Button>;
+  if (isLoading) { 
+    return (
+      <Button disabled className="w-full sm:w-auto min-w-[220px] h-12 text-lg animate-pulse bg-muted hover:bg-muted">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+        読み込み中...
+      </Button>
+    );
   }
 
   return (
     <Button 
       onClick={handleComplete} 
-      disabled={isLoading && !isCompleted} 
-      className="w-full md:w-auto min-w-[200px] h-12 text-lg"
-      variant={isCompleted ? "default" : "default"} 
+      disabled={isCompleted || isSubmitting}
+      className={cn(
+        "w-full sm:w-auto min-w-[220px] h-12 text-lg font-semibold transition-all duration-300 ease-in-out transform hover:scale-105",
+        isCompleted ? "bg-green-600 hover:bg-green-700 text-primary-foreground focus:ring-green-500" : "bg-primary hover:bg-primary/90 text-primary-foreground focus:ring-primary",
+        isSubmitting && "opacity-75 cursor-not-allowed"
+      )}
       aria-live="polite"
+      aria-busy={isSubmitting}
     >
-      {isCompleted ? (
+      {isSubmitting ? (
+        <>
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          処理中...
+        </>
+      ) : isCompleted ? (
         <>
           <CheckCircle2 className="mr-2 h-5 w-5" />
           ステージ完了！
           {nextStageId && (
-            <span className="ml-2 opacity-80">(次へ <ArrowRightCircle className="inline h-4 w-4"/>)</span>
+            <span className="ml-1.5 opacity-90 flex items-center text-sm">
+              (次へ<ArrowRightCircle className="inline h-4 w-4 ml-1"/>)
+            </span>
           )}
         </>
       ) : (
         <>
-          <CheckCircle2 className="mr-2 h-5 w-5" /> 完了としてマーク
+          <CheckCircle2 className="mr-2 h-5 w-5" />
+          完了としてマーク
         </>
       )}
     </Button>

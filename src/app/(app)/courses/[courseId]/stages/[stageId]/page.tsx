@@ -6,9 +6,9 @@ import { getCourseById, getStageById, getStagesForCourse, mockUser, getProgressF
 import type { Stage } from '@/lib/types';
 import { MarkdownDisplay } from '@/components/core/markdown-display';
 import { CompletionButton } from '@/components/core/completion-button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Home, FileText, FileType } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Home, FileText, FileType, ChevronRight } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -55,100 +55,92 @@ export default function StagePage({}: StagePageProps) {
   const renderContent = () => {
     if (isLoadingContent) {
       return (
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-3/4" />
+        <div className="space-y-4 p-2">
+          <Skeleton className="h-8 w-3/4 mb-4" />
+          <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
-          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-32 w-full mt-4" />
           <Skeleton className="h-4 w-full" />
         </div>
       );
     }
     if (!stageContent) {
-      return <p>コンテンツを読み込めませんでした。</p>;
+      return <p className="text-destructive text-center p-4">コンテンツを読み込めませんでした。</p>;
     }
 
     if (stage.fileType === 'md') {
       return <MarkdownDisplay content={stageContent} />;
     }
     if (stage.fileType === 'pdf') {
-      // For a real app, you might use a library like react-pdf or a more robust embedding solution.
-      // This is a simplified example. Direct iframe embedding might have cross-origin issues
-      // if the PDF is not served from the same domain or with appropriate CORS headers.
-      // For mock data, we can display a message or a link.
-      // If filePath is a public URL:
-      // return <iframe src={stage.filePath} width="100%" height="600px" title={stage.title} />;
       return (
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 text-lg font-semibold">
-            <FileType className="h-6 w-6 text-primary" />
+        <div className="space-y-6 p-4 rounded-lg border bg-card">
+          <div className="flex items-center space-x-3 text-xl font-semibold text-foreground">
+            <FileType className="h-7 w-7 text-primary" />
             <span>PDFドキュメント: {stage.title}</span>
           </div>
-          <p className="text-muted-foreground">
-            このステージのコンテンツはPDF形式です。
-            {stage.markdownContent && <span className="block mt-2">概要: {stage.markdownContent}</span>}
-          </p>
-          <Button asChild variant="outline">
-            {/* In a real app, filePath might be a direct URL or need processing */}
-            <a href={`/mock-pdfs/${stage.filePath}`} target="_blank" rel="noopener noreferrer">
+          <CardDescription>
+            このステージのコンテンツはPDF形式です。下のボタンからPDFを開いてください。
+            {stage.markdownContent && <span className="block mt-3 text-sm">概要: {stage.markdownContent}</span>}
+          </CardDescription>
+          <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto">
+            <a href={`/mock-pdfs/${stage.filePath}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+              <FileText className="mr-2 h-5 w-5" />
               PDFを開く (新規タブ)
-              <FileText className="ml-2 h-4 w-4" />
             </a>
           </Button>
-          <p className="text-xs text-muted-foreground">
-            注意: これはモック実装です。実際のアプリケーションでは、PDFはここに埋め込まれるか、より統合された方法で表示されます。
-            上記のリンクは、PDFが `/public/mock-pdfs/` ディレクトリに配置されていることを前提としています。
+          <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+            注意: このリンクは、PDFが `/public/mock-pdfs/` ディレクトリに配置されていることを前提としています。
           </p>
         </div>
       );
     }
-    return <p>不明なファイル形式です。</p>;
+    return <p className="text-destructive text-center p-4">不明なファイル形式です。</p>;
   };
 
 
   return (
-    <div className="space-y-8">
-      <nav aria-label="Breadcrumb" className="mb-6">
-        <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
+    <div className="space-y-6">
+      <nav aria-label="Breadcrumb" className="mb-4">
+        <ol className="flex items-center space-x-1.5 text-sm text-muted-foreground">
           <li>
             <Link href="/" className="hover:text-primary transition-colors flex items-center">
-              <Home className="h-4 w-4 mr-1.5" /> コース一覧
+              <Home className="h-4 w-4 mr-1" /> ホーム
             </Link>
           </li>
-          <li><span className="mx-1">/</span></li>
+          <li><ChevronRight className="h-4 w-4" /></li>
           <li>
-            <Link href={`/courses/${course.id}`} className="hover:text-primary transition-colors">
+            <Link href={`/courses/${course.id}`} className="hover:text-primary transition-colors line-clamp-1 max-w-[150px] sm:max-w-xs md:max-w-sm" title={course.title}>
               {course.title}
             </Link>
           </li>
-          <li><span className="mx-1">/</span></li>
-          <li className="font-medium text-foreground" aria-current="page">
-            ステージ {stage.order}: {stage.title}
+          <li><ChevronRight className="h-4 w-4" /></li>
+          <li className="font-medium text-foreground line-clamp-1 max-w-[150px] sm:max-w-xs md:max-w-sm" aria-current="page" title={stage.title}>
+            {stage.title}
           </li>
         </ol>
       </nav>
 
-      <Card className="shadow-lg overflow-hidden">
-        <CardHeader className="bg-muted/30 p-6 border-b">
-          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">{stage.title}</CardTitle>
-          <p className="text-sm text-muted-foreground">コース: {course.title} - ステージ {stage.order} ({stage.fileType.toUpperCase()})</p>
+      <Card className="shadow-xl overflow-hidden border-border">
+        <CardHeader className="bg-muted/50 p-6 border-b border-border">
+          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">{stage.title}</CardTitle>
+          <CardDescription className="text-sm pt-1">コース: {course.title} - ステージ {stage.order} ({stage.fileType.toUpperCase()})</CardDescription>
         </CardHeader>
-        <CardContent className="p-6 md:p-8 min-h-[300px]">
+        <CardContent className="p-6 md:p-8 min-h-[300px] bg-background">
           {renderContent()}
         </CardContent>
-        <CardFooter className="bg-muted/30 p-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex gap-2 w-full sm:w-auto">
-            {prevStage && (
+        <CardFooter className="bg-muted/30 p-4 sm:p-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex w-full sm:w-auto">
+            {prevStage ? (
               <Button variant="outline" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}/stages/${prevStage.id}`}>
-                  <ArrowLeft className="mr-2 h-4 w-4" /> 前へ
+                  <ArrowLeft className="mr-2 h-4 w-4" /> 前のステージ
                 </Link>
               </Button>
-            )}
-             {!prevStage && <div className="flex-1 sm:flex-none"/> /* Spacer */}
+            ) : <div className="flex-1 sm:flex-none"/> /* Spacer */}
           </div>
           
-          <div className="my-4 sm:my-0">
+          <div className="my-2 sm:my-0 w-full sm:w-auto flex justify-center">
             <CompletionButton 
               stageId={stage.id} 
               userId={mockUser.id} 
@@ -157,26 +149,23 @@ export default function StagePage({}: StagePageProps) {
             />
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
-             {nextStage && isCompleted && (
+          <div className="flex w-full sm:w-auto justify-end">
+             {nextStage && isCompleted ? (
               <Button variant="default" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}/stages/${nextStage.id}`}>
-                  次へ <ArrowRight className="ml-2 h-4 w-4" />
+                  次のステージ <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-            )}
-            {!nextStage && isCompleted && (
+            ) : !nextStage && isCompleted ? (
                <Button variant="default" asChild className="flex-1 sm:flex-none">
                 <Link href={`/courses/${course.id}`}>
                   コースマップへ戻る
                 </Link>
               </Button>
-            )}
-            {(!nextStage || !isCompleted) && <div className="flex-1 sm:flex-none"/> /* Spacer */}
+            ) : <div className="flex-1 sm:flex-none"/> /* Spacer */}
           </div>
         </CardFooter>
       </Card>
     </div>
   );
 }
-
