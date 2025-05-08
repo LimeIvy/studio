@@ -15,7 +15,7 @@ export const mockCourses: Course[] = [
     description: 'Unityの基本を学び、簡単なゲームを作成します。',
     created_at: new Date().toISOString(),
     imageUrl: 'https://picsum.photos/seed/unity/600/400',
-    totalStages: 8, 
+    totalStages: 13, 
     completedStages: 1,
   },
   {
@@ -38,7 +38,33 @@ export const mockCourses: Course[] = [
   },
 ];
 
-export const mockStages: Stage[] = [
+// Positioning constants
+const BASE_X = 50;
+const BASE_Y = 50;
+const COL_SPACING = 250; // STAGE_WIDTH (180) + 70
+const ROW_SPACING = 170; // STAGE_HEIGHT (100) + 70
+const STAGES_PER_ROW = 4;
+
+const calculatePositions = (stages: Stage[], courseId: string): Stage[] => {
+  const courseStages = stages
+    .filter(s => s.course_id === courseId)
+    .sort((a, b) => a.order - b.order);
+
+  return courseStages.map((stage, index) => {
+    const row = Math.floor(index / STAGES_PER_ROW);
+    const col = index % STAGES_PER_ROW;
+    return {
+      ...stage,
+      position: {
+        x: BASE_X + col * COL_SPACING,
+        y: BASE_Y + row * ROW_SPACING,
+      },
+    };
+  });
+};
+
+
+const rawStages: Stage[] = [
   // Unity入門 Stages
   {
     id: 'stage-1-1',
@@ -60,7 +86,7 @@ Unityは、リアルタイム3Dコンテンツを作成・運用するための�
 - Unity HubとUnity Editorの役割を知る
 `,
     order: 1,
-    position: { x: 50, y: 50 },
+    // position will be calculated
   },
   {
     id: 'stage-1-2',
@@ -94,7 +120,6 @@ public class HelloWorld : MonoBehaviour
 \`\`\`
 `,
     order: 2,
-    position: { x: 250, y: 50 },
   },
   {
     id: 'stage-1-3',
@@ -115,7 +140,6 @@ Unity Editorの主要なウィンドウと基本操作に慣れましょう。
 _このステージを完了すると、Unityの基本的な使い方が身につきます。_
 `,
     order: 3,
-    position: { x: 450, y: 50 },
   },
   {
     id: 'stage-1-4',
@@ -153,7 +177,6 @@ public class PlayerController : MonoBehaviour
 \`\`\`
 `,
     order: 4,
-    position: { x: 650, y: 50 },
   },
   {
     id: 'stage-1-5',
@@ -190,7 +213,6 @@ public class Spawner : MonoBehaviour
 \`\`\`
 `,
     order: 5,
-    position: { x: 50, y: 200 }, 
   },
   {
     id: 'stage-1-6',
@@ -216,7 +238,6 @@ public class Spawner : MonoBehaviour
 3. 作成したマテリアルをシーン内のオブジェクトにドラッグ＆ドロップ。
 `,
     order: 6,
-    position: { x: 250, y: 200 },
   },
   {
     id: 'stage-1-7',
@@ -242,7 +263,6 @@ public class Spawner : MonoBehaviour
 リアルタイムライティングは動的ですが処理負荷が高く、ベイクドライティングは静的ですが高品質な影や間接光を低負荷で表現できます。
 `,
     order: 7,
-    position: { x: 450, y: 200 },
   },
   {
     id: 'stage-1-8',
@@ -272,7 +292,293 @@ Hierarchyウィンドウで右クリック > UI > (作成したいUI要素) を�
 Canvasがなければ自動的に作成されます。
 `,
     order: 8,
-    position: { x: 650, y: 200 },
+  },
+  {
+    id: 'stage-1-9',
+    course_id: 'course-1',
+    title: '物理演算の基礎 (Rigidbody)',
+    markdownContent: `
+# 物理演算の基礎 (Rigidbody)
+
+オブジェクトに物理的な挙動をさせるための Rigidbody コンポーネントについて学びます。
+
+## Rigidbody
+- オブジェクトに質量、重力、衝突応答などの物理特性を与える。
+- Rigidbody をアタッチしたオブジェクトは、物理エンジンの影響を受けるようになる。
+
+## 主要なプロパティ
+- **Mass**: 質量。重いほど動きにくい。
+- **Drag**: 空気抵抗。大きいほど動きが早く減速する。
+- **Angular Drag**: 回転の空気抵抗。
+- **Use Gravity**: 重力の影響を受けるかどうか。
+- **Is Kinematic**: true の場合、物理エンジンによる制御を受けず、スクリプトから Transform を直接操作して動かす。ただし他の Rigidbody との衝突判定は行う。
+
+##力を加える
+\`\`\`csharp
+using UnityEngine;
+
+public class PlayerPhysics : MonoBehaviour
+{
+    public float jumpForce = 10f;
+    private Rigidbody rb;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+
+    void Update()
+    {
+        if (Input.GetButtonDown("Jump"))
+        {
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+    }
+}
+\`\`\`
+ForceMode には \`Force\`, \`Acceleration\`, \`Impulse\`, \`VelocityChange\` があります。
+`,
+    order: 9,
+  },
+  {
+    id: 'stage-1-10',
+    course_id: 'course-1',
+    title: 'コライダーと衝突判定',
+    markdownContent: `
+# コライダーと衝突判定
+
+オブジェクト同士の衝突を検知するためのコライダー (Collider) について学びます。
+
+## コライダー
+- オブジェクトの物理的な形状を定義するコンポーネント。
+- Rigidbody と共に使用されることが多いが、静的なオブジェクトにも使用可能。
+- **種類**: Box Collider, Sphere Collider, Capsule Collider, Mesh Collider など。
+
+## 衝突判定
+Rigidbody を持つオブジェクト同士が衝突すると、物理的な応答が発生します。
+衝突イベントをスクリプトで検知するには、以下のメソッドを使用します。
+\`\`\`csharp
+using UnityEngine;
+
+public class CollisionDetector : MonoBehaviour
+{
+    // 物理的な衝突が発生した最初のフレームで呼び出される
+    void OnCollisionEnter(Collision collision)
+    {
+        Debug.Log("Collided with: " + collision.gameObject.name);
+        // collision.contacts[0].point で衝突点を取得可能
+    }
+
+    // 衝突が継続している間、毎フレーム呼び出される
+    void OnCollisionStay(Collision collision)
+    {
+        // Debug.Log("Still colliding with: " + collision.gameObject.name);
+    }
+
+    // 衝突が終了したフレームで呼び出される
+    void OnCollisionExit(Collision collision)
+    {
+        Debug.Log("Stopped colliding with: " + collision.gameObject.name);
+    }
+}
+\`\`\`
+## トリガー
+コライダーの \`Is Trigger\` プロパティを true にすると、物理的な衝突応答はせず、接触イベントのみを検知するトリガーになります。
+トリガーイベントは \`OnTriggerEnter\`, \`OnTriggerStay\`, \`OnTriggerExit\` で検知します（引数は \`Collider other\`）。
+少なくとも一方のオブジェクトが Rigidbody を持っている必要があります。
+`,
+    order: 10,
+  },
+  {
+    id: 'stage-1-11',
+    course_id: 'course-1',
+    title: 'スクリプト間の連携',
+    markdownContent: `
+# スクリプト間の連携
+
+複数のスクリプト間で情報や機能をやり取りする方法を学びます。
+
+## GetComponent
+他のコンポーネント（スクリプトも含む）への参照を取得する最も一般的な方法です。
+\`\`\`csharp
+using UnityEngine;
+
+// Health.cs
+public class Health : MonoBehaviour
+{
+    public int currentHealth = 100;
+
+    public void TakeDamage(int amount)
+    {
+        currentHealth -= amount;
+        Debug.Log(gameObject.name + " took " + amount + " damage. Health: " + currentHealth);
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    void Die()
+    {
+        Debug.Log(gameObject.name + " died.");
+        // 死亡処理 (例: Destroy(gameObject);)
+    }
+}
+
+// Attacker.cs
+public class Attacker : MonoBehaviour
+{
+    public int damageAmount = 25;
+
+    void OnCollisionEnter(Collision collision)
+    {
+        Health targetHealth = collision.gameObject.GetComponent<Health>();
+        if (targetHealth != null) // 相手がHealthコンポーネントを持っているか確認
+        {
+            targetHealth.TakeDamage(damageAmount);
+        }
+    }
+}
+\`\`\`
+
+## public 変数と Inspector
+スクリプト内の public 変数は Inspector ウィンドウに表示され、他のゲームオブジェクトやコンポーネントをドラッグ＆ドロップで設定できます。
+\`\`\`csharp
+public class GameManager : MonoBehaviour
+{
+    public PlayerController player; // InspectorでPlayerオブジェクトをアサイン
+
+    void Start()
+    {
+        if (player != null)
+        {
+            // player.DoSomething();
+        }
+    }
+}
+\`\`\`
+
+##静的メンバー (Static Members)
+クラスに属し、インスタンス化せずにアクセスできるメンバー。シングルトンパターンなどで利用されます。
+\`\`\`csharp
+// ScoreManager.cs
+public class ScoreManager : MonoBehaviour
+{
+    public static int score; // 静的変数
+
+    public static void AddScore(int amount) // 静的メソッド
+    {
+        score += amount;
+        Debug.Log("Score: " + score);
+    }
+}
+
+// Enemy.cs
+public class Enemy : MonoBehaviour
+{
+    void OnDestroy()
+    {
+        ScoreManager.AddScore(10); // 他のスクリプトから直接呼び出し
+    }
+}
+\`\`\`
+`,
+    order: 11,
+  },
+  {
+    id: 'stage-1-12',
+    course_id: 'course-1',
+    title: 'オーディオの再生 (AudioSource)',
+    markdownContent: `
+# オーディオの再生 (AudioSource)
+
+ゲームに効果音やBGMを追加する方法を学びます。
+
+## 主要コンポーネント
+- **AudioClip**: 音声ファイル (.wav, .mp3, .ogg など)。Projectウィンドウにインポートします。
+- **AudioSource**: シーン内で音を再生するコンポーネント。ゲームオブジェクトにアタッチします。
+- **AudioListener**: シーン内の音を聞くコンポーネント。通常、メインカメラに1つだけアタッチされています。
+
+## AudioSource の主なプロパティ
+- **AudioClip**: 再生する音声クリップ。
+- **Output**: 音声の出力先 (通常は AudioMixer 経由で AudioListener へ)。
+- **Play On Awake**: true の場合、シーン開始時に自動再生。
+- **Loop**: true の場合、繰り返し再生 (BGMなどに)。
+- **Volume**: 音量 (0-1)。
+- **Pitch**: ピッチ (1が通常)。
+- **Spatial Blend**: 2D (0) と 3D (1) のブレンド。3Dにすると音源からの距離や方向で聞こえ方が変わる。
+
+## スクリプトからの再生
+\`\`\`csharp
+using UnityEngine;
+
+public class SoundPlayer : MonoBehaviour
+{
+    public AudioClip jumpSound;
+    public AudioClip coinSound;
+    private AudioSource audioSource;
+
+    void Start()
+    {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) // AudioSourceがなければ追加
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+    }
+
+    public void PlayJumpSound()
+    {
+        if (jumpSound != null)
+        {
+            audioSource.PlayOneShot(jumpSound, 0.7f); // PlayOneShotは重複再生可能、第二引数で音量スケール
+        }
+    }
+
+    public void PlayCoinSound()
+    {
+        if (coinSound != null)
+        {
+            // audioSource.clip = coinSound; // こちらはBGMなど上書きして再生する場合
+            // audioSource.Play();
+            AudioSource.PlayClipAtPoint(coinSound, transform.position); // 指定位置で一時的なAudioSourceを作成して再生
+        }
+    }
+}
+\`\`\`
+`,
+    order: 12,
+  },
+  {
+    id: 'stage-1-13',
+    course_id: 'course-1',
+    title: '簡単なゲームのビルド',
+    markdownContent: `
+# 簡単なゲームのビルド
+
+作成したUnityプロジェクトをスタンドアロンアプリケーションとしてビルドする方法を学びます。
+
+## ビルド設定 (Build Settings)
+1. File > Build Settings を選択。
+2. **Scenes In Build**: ビルドに含めるシーンを追加します。「Add Open Scenes」で現在開いているシーンを追加できます。最初のシーン (インデックス0) が起動時に読み込まれます。
+3. **Platform**: ビルド対象のプラットフォーム (Windows, macOS, Linux, WebGLなど) を選択。必要に応じて「Switch Platform」をクリック。
+4. **Player Settings...**: アイコン、解像度、会社名、製品名などの詳細設定。
+
+## ビルド実行
+1. Build Settings ウィンドウで「Build」をクリック。
+2. ビルドの保存場所とファイル名を指定。
+3. ビルドが開始されます。完了すると指定した場所に実行ファイル（または関連ファイル群）が生成されます。
+
+## WebGLビルドの注意点
+- ビルドに時間がかかることがあります。
+- サーバーにアップロードして実行する必要があります。ローカルファイルシステムから直接index.htmlを開いても動作しない場合があります。
+- パフォーマンスや機能に一部制約があります。
+
+おめでとうございます！これでUnityの基本的な流れを体験しました。
+ここからさらに様々な機能を学んで、あなたのアイデアを形にしていきましょう！
+[Unity Learn](https://learn.unity.com/) でさらに多くのチュートリアルやプロジェクトを見つけることができます。
+`,
+    order: 13,
   },
 
   // Ruby入門 Stages
@@ -298,7 +604,6 @@ Rubyは、まつもとゆきひろ氏によって開発されたオブジェク�
 [Ruby公式サイト](https://www.ruby-lang.org/)
 `,
     order: 1,
-    position: { x: 50, y: 350 }, 
   },
   {
     id: 'stage-2-2',
@@ -340,7 +645,6 @@ end
 \`\`\`
 `,
     order: 2,
-    position: { x: 250, y: 350 }, 
   },
   {
     id: 'stage-2-3',
@@ -377,7 +681,6 @@ puts my_dog.bark # => Buddy says Woof!
 \`\`\`
 `,
     order: 3,
-    position: { x: 450, y: 350 }, 
   },
    {
     id: 'stage-2-4',
@@ -413,7 +716,6 @@ puts even_numbers.inspect # => [2, 4, 6]
 \`\`\`
 `,
     order: 4,
-    position: { x: 650, y: 350 }, 
   },
   // Next.js と Firebase Stages (Placeholder)
   {
@@ -422,7 +724,6 @@ puts even_numbers.inspect # => [2, 4, 6]
     title: 'Next.jsプロジェクトセットアップ',
     markdownContent: '# Next.jsプロジェクトセットアップ\n\nNext.jsプロジェクトの初期設定方法を学びます。',
     order: 1,
-    position: { x: 50, y: 500 },
   },
   {
     id: 'stage-3-2',
@@ -430,7 +731,6 @@ puts even_numbers.inspect # => [2, 4, 6]
     title: 'Firebaseプロジェクト連携',
     markdownContent: '# Firebaseプロジェクト連携\n\nFirebaseプロジェクトを作成し、Next.jsアプリと連携します。',
     order: 2,
-    position: { x: 250, y: 500 },
   },
   {
     id: 'stage-3-3',
@@ -438,7 +738,6 @@ puts even_numbers.inspect # => [2, 4, 6]
     title: 'Firestoreデータ操作',
     markdownContent: '# Firestoreデータ操作\n\nFirestoreデータベースの基本的なCRUD操作を学びます。',
     order: 3,
-    position: { x: 450, y: 500 },
   },
   {
     id: 'stage-3-4',
@@ -446,7 +745,6 @@ puts even_numbers.inspect # => [2, 4, 6]
     title: 'Firebase Authentication',
     markdownContent: '# Firebase Authentication\n\nFirebase Authenticationを用いたユーザー認証機能を実装します。',
     order: 4,
-    position: { x: 650, y: 500 },
   },
   {
     id: 'stage-3-5',
@@ -454,9 +752,16 @@ puts even_numbers.inspect # => [2, 4, 6]
     title: 'Firebase Hostingデプロイ',
     markdownContent: '# Firebase Hostingデプロイ\n\n作成したアプリケーションをFirebase Hostingにデプロイします。',
     order: 5,
-    position: { x: 50, y: 650 },
   },
 ];
+
+
+export const mockStages: Stage[] = [
+  ...calculatePositions(rawStages, 'course-1'),
+  ...calculatePositions(rawStages, 'course-2'),
+  ...calculatePositions(rawStages, 'course-3'),
+];
+
 
 export const mockStageLinks: StageLink[] = [
   // Unity Links
@@ -467,6 +772,11 @@ export const mockStageLinks: StageLink[] = [
   { id: 'link-1-5-6', from_stage_id: 'stage-1-5', to_stage_id: 'stage-1-6' },
   { id: 'link-1-6-7', from_stage_id: 'stage-1-6', to_stage_id: 'stage-1-7' },
   { id: 'link-1-7-8', from_stage_id: 'stage-1-7', to_stage_id: 'stage-1-8' },
+  { id: 'link-1-8-9', from_stage_id: 'stage-1-8', to_stage_id: 'stage-1-9' },
+  { id: 'link-1-9-10', from_stage_id: 'stage-1-9', to_stage_id: 'stage-1-10' },
+  { id: 'link-1-10-11', from_stage_id: 'stage-1-10', to_stage_id: 'stage-1-11' },
+  { id: 'link-1-11-12', from_stage_id: 'stage-1-11', to_stage_id: 'stage-1-12' },
+  { id: 'link-1-12-13', from_stage_id: 'stage-1-12', to_stage_id: 'stage-1-13' },
 
   // Ruby Links
   { id: 'link-2-1-2', from_stage_id: 'stage-2-1', to_stage_id: 'stage-2-2' },
