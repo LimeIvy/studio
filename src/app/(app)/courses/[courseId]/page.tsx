@@ -7,7 +7,7 @@ import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForSta
 import type { Stage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, FileText, Users, Globe, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink, Users, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -209,12 +209,11 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
       return <p>コンテンツを読み込めませんでした。</p>;
     }
 
-    // Only MD files are supported now
     if (selectedStageForModal.fileType === 'md') {
       return <MarkdownDisplay content={modalContent} />;
     }
     
-    return <p>不明なファイル形式です。</p>;
+    return <p>サポートされていないファイル形式です。</p>;
   };
 
 
@@ -356,7 +355,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           )}
                           strokeWidth={strokeWidth}
                           fill="none"
-                          strokeDasharray={isFromCompleted ? "none" : "5,5"} // Changed from "5,5" : "none"
+                          strokeDasharray={isFromCompleted ? "none" : "5,5"} 
                           markerEnd={`url(#${arrowId})`}
                         />
                       </g>
@@ -394,7 +393,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                       icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
                       statusAriaLabel = '完了';
                     } else if (isAccessible) {
-                      cardClass = 'border-primary bg-card hover:shadow-lg'; // Removed bg-primary/10 dark:bg-primary/20
+                      cardClass = 'border-primary bg-card hover:shadow-lg';
                       icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
                       statusAriaLabel = '学習可能';
                     }
@@ -420,13 +419,9 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                         >
                           <CardContent className="p-2 flex flex-col justify-center items-center h-full w-full">
                               {icon}
-                              <h3 className="text-xs font-medium leading-tight break-words mt-1">
+                              <h3 className="text-sm font-semibold leading-tight break-words mt-1.5">
                                 ステージ {stage.order}: {stage.title}
                               </h3>
-                              {/* Removed fileType display as it's always MD now */}
-                              <Badge variant="outline" className="mt-1.5 text-xs px-1.5 py-0.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
-                                <Zap className="mr-1 h-3 w-3 text-yellow-600 dark:text-yellow-500" /> {stage.xpAward} XP
-                              </Badge>
                           </CardContent>
                         </Card>
                       </DialogTrigger>
@@ -458,10 +453,8 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
               </div>
               <DialogDescription asChild>
                 <div className="text-sm text-muted-foreground pt-1 flex justify-between items-center">
-                   <span>形式: {selectedStageForModal.fileType.toUpperCase()}</span>
-                   <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-yellow-500 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 dark:bg-yellow-500/20">
-                     <Zap className="mr-1 h-3 w-3 text-yellow-600 dark:text-yellow-500" /> {selectedStageForModal.xpAward} XP
-                   </Badge>
+                   {/* File type display removed */}
+                   <span>{selectedStageForModal.xpAward} XP獲得可能</span> {/* XP display kept for modal */}
                 </div>
               </DialogDescription>
             </DialogHeader>
@@ -471,23 +464,12 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
             <DialogFooter className="mt-auto pt-4 border-t">
               <Button variant="outline" onClick={() => setSelectedStageForModal(null)}>閉じる</Button>
               <Button asChild disabled={modalButtonDisabled}>
-                 {/* Link only rendered if not disabled, to prevent navigation to locked stages */}
                 {!modalButtonDisabled ? (
                     <Link href={`/courses/${course.id}/stages/${selectedStageForModal.id}`}>
                     {modalButtonText}
                     <ExternalLink className="ml-2 h-4 w-4" />
                     </Link>
                 ) : (
-                    // Render a span or fragment if disabled to satisfy asChild
-                    // The button itself is disabled, so this link won't be interactive
-                    // but this structure prevents error with asChild.
-                    // Or simply don't use asChild if the button is meant to be non-navigational when disabled.
-                    // For now, this will render a disabled button with text but no link functionality.
-                    // To ensure it's truly not a link, we can conditional render the Link component
-                    // based on modalButtonDisabled.
-                    // Let's simplify by making the button itself handle the text.
-                    // The asChild should be on the Button, and the Link inside it.
-                    // Corrected approach: Conditionally wrap with Link.
                     <span>
                         {modalButtonText}
                         <ExternalLink className="ml-2 h-4 w-4" />
@@ -501,4 +483,3 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
-
