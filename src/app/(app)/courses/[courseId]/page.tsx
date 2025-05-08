@@ -1,12 +1,25 @@
+
+"use client";
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser } from '@/lib/mock-data';
 import type { Stage } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription as CourseCardDescription } from '@/components/ui/card'; // Renamed CardDescription to avoid conflict
 import { Button } from '@/components/ui/button';
-import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Map, Lock, ArrowRightCircle, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { MarkdownDisplay } from '@/components/core/markdown-display';
 
 interface StageMapPageProps {
   params: {
@@ -23,6 +36,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
 
   const stages = getStagesForCourse(params.courseId);
   const links = getLinksForCourse(params.courseId);
+  const [selectedStageForModal, setSelectedStageForModal] = useState<Stage | null>(null);
 
   const stageMap = stages.reduce((acc, stage) => {
     acc[stage.id] = stage;
@@ -30,26 +44,27 @@ export default function StageMapPage({ params }: StageMapPageProps) {
   }, {} as Record<string, Stage>);
 
   // Determine map dimensions
-  const STAGE_WIDTH = 180; // Approximate width of a stage card
-  const STAGE_HEIGHT = 130; // Approximate height of a stage card
-  const PADDING = 50; // Padding around the map
+  const STAGE_WIDTH = 180; 
+  const STAGE_HEIGHT = 100; // Reduced height for simpler card
+  const PADDING = 50; 
 
   const mapWidth = stages.length > 0 
     ? Math.max(...stages.map(s => s.position.x + STAGE_WIDTH)) + PADDING
     : PADDING * 2;
   const mapHeight = stages.length > 0
-    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING
+    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING * 2 // Added more bottom padding
     : PADDING * 2;
-
+  
   // Logic for the main "Start/Continue Learning" button
   const allStagesCompleted = stages.every(s => getProgressForStage(mockUser.id, s.id));
   
-  let currentStagesInfo = stages.map(stage => {
+  let currentActiveStagesInfo = stages.map(stage => {
     const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
     let isAccessible = false;
-    if (stage.order === 1) {
+    if (stage.order === 1) { // The first stage is always accessible
         isAccessible = true;
     } else {
+        // A stage is accessible if any of its prerequisite stages are completed
         const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
         for (const link of incomingLinks) {
             if (getProgressForStage(mockUser.id, link.from_stage_id)) {
@@ -65,19 +80,52 @@ export default function StageMapPage({ params }: StageMapPageProps) {
   let buttonText = "Start Learning";
 
   if (allStagesCompleted && stages.length > 0) {
-    buttonTargetStageId = stages[0].id;
+    buttonTargetStageId = stages[0].id; // Review first stage if all completed
     buttonText = "Review First Stage";
-  } else if (currentStagesInfo.length > 0) {
-    buttonTargetStageId = currentStagesInfo[0].id;
-    buttonText = currentStagesInfo[0].order === 1 && !currentStagesInfo[0].isCompleted && stages.filter(s => s.isCompleted).length === 0 
+  } else if (currentActiveStagesInfo.length > 0) {
+    buttonTargetStageId = currentActiveStagesInfo[0].id;
+    const firstActiveStage = currentActiveStagesInfo[0];
+    // Check if any stage has been completed to determine if user "started" the course
+    const userHasStartedCourse = stages.some(s => s.isCompleted);
+    buttonText = (firstActiveStage.order === 1 && !firstActiveStage.isCompleted && !userHasStartedCourse)
                   ? "Start Learning" 
                   : "Continue Learning";
-  } else if (stages.length > 0) { // No current stages, but not all completed
-    // Fallback to the first stage if it exists and is not completed (should be caught by currentStagesInfo if accessible)
-    // Or if all are done this case is already handled. This implies a broken graph or all initial paths are somehow locked.
-    // Default to reviewing the course or first stage.
-    buttonTargetStageId = stages[0].id;
+  } else if (stages.length > 0) { 
+    // If no current active stages (e.g. a gap in the map or all done), default to first stage
+    buttonTargetStageId = stages[0].id; // Fallback to first stage
     buttonText = "Review Course";
+  }
+
+
+  // Modal specific logic
+  let modalStageIsCompleted = false;
+  let modalStageIsAccessible = false;
+  let modalButtonText = 'View Stage';
+  let modalButtonDisabled = true;
+
+  if (selectedStageForModal) {
+      modalStageIsCompleted = !!getProgressForStage(mockUser.id, selectedStageForModal.id);
+      
+      if (selectedStageForModal.order === 1) { // First stage always accessible
+          modalStageIsAccessible = true;
+      } else {
+          // A stage is accessible if any of its prerequisite stages are completed
+          const incomingLinksToModalStage = links.filter(l => l.to_stage_id === selectedStageForModal.id);
+          for (const link of incomingLinksToModalStage) {
+              if (getProgressForStage(mockUser.id, link.from_stage_id)) {
+                  modalStageIsAccessible = true;
+                  break;
+              }
+          }
+      }
+
+      if (modalStageIsAccessible) {
+          modalButtonText = modalStageIsCompleted ? "Review Stage" : "Start Stage";
+          modalButtonDisabled = false;
+      } else {
+          modalButtonText = "Stage Locked"; // Text for locked stages
+          modalButtonDisabled = true;
+      }
   }
 
 
@@ -88,7 +136,7 @@ export default function StageMapPage({ params }: StageMapPageProps) {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground mb-1">{course.title}</h1>
-              <CardDescription className="text-lg text-muted-foreground">{course.description}</CardDescription>
+              <CourseCardDescription className="text-lg text-muted-foreground">{course.description}</CourseCardDescription>
             </div>
             {buttonTargetStageId && (
               <Button asChild size="lg" className="mt-4 md:mt-0">
@@ -139,91 +187,70 @@ export default function StageMapPage({ params }: StageMapPageProps) {
                     y2={y2}
                     className={cn(
                       "transition-all duration-500",
-                      isFromCompleted ? "stroke-primary" : "stroke-border"
+                      isFromCompleted ? "stroke-primary" : "stroke-border" // Line color based on source completion
                     )}
                     strokeWidth="3"
-                    strokeDasharray={isFromCompleted ? "none" : "6,4"}
+                    strokeDasharray={isFromCompleted ? "none" : "6,4"} // Dashed if source not completed
                   />
                 );
               })}
             </svg>
 
             {stages.map(stage => {
-              const { isCompleted, isAccessible, isCurrent } = currentStagesInfo.find(s => s.id === stage.id) || 
-                { 
-                  isCompleted: !!getProgressForStage(mockUser.id, stage.id), 
-                  isAccessible: stage.order === 1 || links.some(l => l.to_stage_id === stage.id && !!getProgressForStage(mockUser.id, l.from_stage_id)),
-                  isCurrent: (stage.order === 1 || links.some(l => l.to_stage_id === stage.id && !!getProgressForStage(mockUser.id, l.from_stage_id))) && !getProgressForStage(mockUser.id, stage.id)
-                };
+              const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
+              let isAccessible = stage.order === 1; // First stage always accessible
+              if (!isAccessible) {
+                // Check if any prerequisite stage is completed
+                const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
+                for (const link of incomingLinks) {
+                    if (getProgressForStage(mockUser.id, link.from_stage_id)) {
+                        isAccessible = true;
+                        break;
+                    }
+                }
+              }
+              const isCurrent = isAccessible && !isCompleted;
 
+              // Define card appearance based on state
               let cardClass = 'bg-card hover:shadow-md';
-              let badgeText = `Stage ${stage.order}`;
-              let icon = <Lock className="h-5 w-5 mr-2 text-muted-foreground flex-shrink-0" />;
+              let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />; // Default to locked
 
               if (isCompleted) {
-                cardClass = 'bg-green-100 dark:bg-green-800 border-green-500 hover:shadow-lg';
-                badgeText += " - Completed";
-                icon = <CheckCircle2 className="h-5 w-5 mr-2 text-green-600 flex-shrink-0" />;
+                cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
+                icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
               } else if (isCurrent) {
-                cardClass = 'bg-blue-100 dark:bg-blue-800 border-primary hover:shadow-lg animate-pulse-slow';
-                badgeText += " - Current";
-                icon = <ArrowRightCircle className="h-5 w-5 mr-2 text-primary flex-shrink-0" />;
-              } else { // Locked or not yet accessible but not current
-                cardClass = 'bg-muted/30 dark:bg-muted/50 border-muted hover:shadow-sm opacity-60';
-                badgeText += " - Locked";
+                cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
+                icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
+              } else { // Locked (not completed and not current/accessible)
+                cardClass = 'bg-muted border-border hover:shadow-md'; // No semi-transparent for locked, just muted
               }
               
-              if (!stage.position) return null; // Should not happen if data is correct
+              if (!stage.position) return null;
 
               return (
-                <Card
-                  key={stage.id}
-                  className={cn(
-                    "absolute transition-all duration-300 ease-in-out shadow-md",
-                    cardClass
-                  )}
-                  style={{
-                    left: `${stage.position.x}px`,
-                    top: `${stage.position.y}px`,
-                    width: `${STAGE_WIDTH}px`,
-                    height: `${STAGE_HEIGHT}px`,
-                    zIndex: 10, 
-                  }}
-                >
-                  <CardContent className="p-3 flex flex-col justify-between h-full">
-                    <div>
-                      <div className="flex items-start mb-1">
+                <DialogTrigger asChild key={stage.id} onClick={() => setSelectedStageForModal(stage)}>
+                  <Card
+                    className={cn(
+                      "absolute transition-all duration-300 ease-in-out shadow-md cursor-pointer",
+                      cardClass
+                    )}
+                    style={{
+                      left: `${stage.position.x}px`,
+                      top: `${stage.position.y}px`,
+                      width: `${STAGE_WIDTH}px`,
+                      height: `${STAGE_HEIGHT}px`,
+                      zIndex: 10, // Ensure cards are above lines
+                    }}
+                    aria-label={`Stage ${stage.order}: ${stage.title}. Status: ${isCompleted ? 'Completed' : isCurrent ? 'Current' : 'Locked'}`}
+                  >
+                    <CardContent className="p-3 flex flex-col justify-center items-center h-full text-center">
                         {icon}
-                        <h3 className="text-base font-medium leading-tight break-words">
-                          {stage.title}
+                        <h3 className="text-sm font-medium leading-tight break-words mt-1">
+                          Stage {stage.order}: {stage.title}
                         </h3>
-                      </div>
-                       <Badge 
-                        variant={isCompleted ? "default" : isCurrent ? "default": "outline"} 
-                        className={cn(
-                            "text-xs whitespace-nowrap",
-                            isCompleted ? "bg-green-600 hover:bg-green-700 text-white" : "",
-                            isCurrent ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "",
-                            !isCompleted && !isCurrent ? "border-muted-foreground text-muted-foreground" : ""
-                        )}
-                      >
-                        {badgeText}
-                      </Badge>
-                    </div>
-                    <Button 
-                        asChild 
-                        variant={isCompleted ? "outline" : "default"} 
-                        size="sm" 
-                        className="mt-2 w-full"
-                        disabled={!isAccessible && !isCompleted}
-                      >
-                      <Link href={`/courses/${course.id}/stages/${stage.id}`}>
-                        {isCompleted ? 'Review' : isCurrent ? 'Start' : 'View'}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
               );
             })}
           </div>
@@ -231,6 +258,37 @@ export default function StageMapPage({ params }: StageMapPageProps) {
           <p className="text-muted-foreground">No stages defined for this course yet.</p>
         )}
       </section>
+
+      {selectedStageForModal && (
+        <Dialog open={!!selectedStageForModal} onOpenChange={(isOpen) => !isOpen && setSelectedStageForModal(null)}>
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Stage {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
+              <DialogDescription>
+                {modalStageIsCompleted ? (
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">Completed</Badge>
+                ) : modalStageIsAccessible ? (
+                    <Badge variant="default" className="bg-primary hover:bg-primary/90">Current</Badge>
+                ) : (
+                    <Badge variant="outline">Locked</Badge>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+              <MarkdownDisplay content={selectedStageForModal.markdownContent} />
+            </div>
+            <DialogFooter className="mt-auto pt-4 border-t">
+              <Button variant="outline" onClick={() => setSelectedStageForModal(null)}>Close</Button>
+              <Button asChild disabled={modalButtonDisabled}>
+                <Link href={`/courses/${course.id}/stages/${selectedStageForModal.id}`}>
+                  {modalButtonText}
+                  <ExternalLink className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
