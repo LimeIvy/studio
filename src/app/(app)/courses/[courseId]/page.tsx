@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser } from '@/lib/mock-data';
@@ -26,12 +26,13 @@ interface ResolvedPageParams {
 }
 
 interface StageMapPageProps {
-  params: ResolvedPageParams;
+  // According to the Next.js error message, 'params' is a Promise here.
+  params: Promise<ResolvedPageParams>;
 }
 
-export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
-  // Directly use paramsFromProps as it should already be resolved
-  const params = paramsFromProps;
+export default function StageMapPage({ params: paramsPromise }: StageMapPageProps) {
+  // Unwrap the params promise using React.use()
+  const params = React.use(paramsPromise);
 
   const course = getCourseById(params.courseId);
 
@@ -41,7 +42,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
   const stages = getStagesForCourse(params.courseId);
   const links = getLinksForCourse(params.courseId);
-  const [selectedStageForModal, setSelectedStageForModal] = useState<Stage | null>(null);
+  const [selectedStageForModal, setSelectedStageForModal] = React.useState<Stage | null>(null);
 
   const stageMap = stages.reduce((acc, stage) => {
     acc[stage.id] = stage;
@@ -54,10 +55,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
   const PADDING = 50;
 
   const mapWidth = stages.length > 0
-    ? Math.max(...stages.map(s => s.position.x + STAGE_WIDTH)) + PADDING
+    ? Math.max(...stages.map(s => s.position?.x ? s.position.x + STAGE_WIDTH : STAGE_WIDTH)) + PADDING
     : PADDING * 2;
   const mapHeight = stages.length > 0
-    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING * 2
+    ? Math.max(...stages.map(s => s.position?.y ? s.position.y + STAGE_HEIGHT : STAGE_HEIGHT)) + PADDING * 2
     : PADDING * 2;
 
   // Logic for the main "Start/Continue Learning" button
@@ -94,8 +95,10 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                   ? "学習を開始" 
                   : "学習を続ける"; 
   } else if (stages.length > 0) {
+    // If no active stages but course has stages (e.g. all prerequisites not met for any non-first stage)
+    // Default to the first stage, possibly for review or if logic error upstream.
     buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id;
-    buttonText = "コースを復習"; 
+    buttonText = "コースを開始"; // Or "コース概要へ" if appropriate
   }
 
 
@@ -312,7 +315,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                         modalStageIsCompleted && "bg-green-600 hover:bg-green-700 text-primary-foreground",
                         modalStageIsAccessible && !modalStageIsCompleted && "bg-primary hover:bg-primary/90 text-primary-foreground"
                     )}
-                    as="span"
+                    as="span" // Changed from div to span to be valid inside p (DialogDescription renders as p)
                    >
                     {modalStatusText}
                    </Badge>
@@ -337,4 +340,3 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
-
