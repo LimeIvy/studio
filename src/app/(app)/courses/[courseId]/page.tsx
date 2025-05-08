@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -29,6 +30,7 @@ interface StageMapPageProps {
 
 export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
   const params = useNextParams() as { courseId: string }; 
+  // const params = React.use(Promise.resolve(paramsFromProps)); // Avoid React.use for now due to potential issues in some environments/versions
 
   const course = getCourseById(params.courseId);
 
@@ -77,25 +79,23 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
 
   const maxCols = stages.reduce((max, s) => {
     if (!s.position) return max;
-    // Calculate column based on position, ensuring it starts from 0
     return Math.max(max, Math.floor((s.position.x - PADDING_X) / COL_SPACING) +1);
   },0);
 
 
   const maxRows = stages.reduce((max, s) => {
     if (!s.position) return max;
-     // Calculate row based on position, ensuring it starts from 0
     return Math.max(max, Math.floor((s.position.y - PADDING_Y) / ROW_SPACING) +1);
   }, 0);
   
 
   const mapWidth = stages.length > 0
     ? PADDING_X * 2 + Math.max(0, maxCols - 1) * COL_SPACING + STAGE_WIDTH
-    : PADDING_X * 2 + STAGE_WIDTH; // Default width for empty map
+    : PADDING_X * 2 + STAGE_WIDTH; 
 
   const mapHeight = stages.length > 0
     ? PADDING_Y * 2 + Math.max(0, maxRows -1) * ROW_SPACING + STAGE_HEIGHT
-    : PADDING_Y * 2 + STAGE_HEIGHT; // Default height for empty map
+    : PADDING_Y * 2 + STAGE_HEIGHT; 
 
 
   // Logic for the main "Start/Continue Learning" button
@@ -295,62 +295,65 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                     
                     const arrowId = `arrow-${link.id}`;
 
-                    // Calculate line start and end points on the card edges
                     let pathX1 = x1_center;
                     let pathY1 = y1_center;
                     let pathX2 = x2_center;
                     let pathY2 = y2_center;
 
-                    // Simplified edge calculation: from center of source to center of target,
-                    // then adjust to hit the edge. Arrowhead will be on this line.
                     const dx = x2_center - x1_center;
                     const dy = y2_center - y1_center;
                     const angle = Math.atan2(dy, dx);
 
-                    // Start point (edge of fromStage)
+                    const offsetX = Math.cos(angle) * (STAGE_WIDTH / 2 + 2); // +2 for small gap
+                    const offsetY = Math.sin(angle) * (STAGE_HEIGHT / 2 + 2); // +2 for small gap
+
                     if (Math.abs(dx) > Math.abs(dy)) { // More horizontal
                         pathX1 = x1_center + (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
                         pathY1 = y1_center + Math.tan(angle) * (pathX1 - x1_center);
+                        pathX2 = x2_center - (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
+                        pathY2 = y2_center - Math.tan(angle) * (x2_center - pathX2);
                     } else { // More vertical
                         pathY1 = y1_center + (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
                         pathX1 = x1_center + (pathY1 - y1_center) / Math.tan(angle);
+                        pathY2 = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
+                        pathX2 = x2_center - (y2_center - pathY2) / Math.tan(angle);
                     }
-                    
-                    // End point for arrow (edge of toStage)
-                    let endX = x2_center - (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2) * Math.cos(angle);
-                    let endY = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2) * Math.sin(angle);
-                    
-                    // Refined end point to ensure it's on the border
-                    if (Math.abs(dx) > Math.abs(dy)) { // More horizontal
-                       endX = x2_center - (dx > 0 ? STAGE_WIDTH / 2 : -STAGE_WIDTH / 2);
-                       endY = y2_center - Math.tan(angle) * (x2_center - endX);
-                    } else { // More vertical
-                       endY = y2_center - (dy > 0 ? STAGE_HEIGHT / 2 : -STAGE_HEIGHT / 2);
-                       endX = x2_center - (y2_center - endY) / Math.tan(angle);
-                    }
-                    // Clamp endY/endX if they go significantly off due to extreme angles near corners
-                    endX = Math.max(toStage.position.x, Math.min(endX, toStage.position.x + STAGE_WIDTH));
-                    endY = Math.max(toStage.position.y, Math.min(endY, toStage.position.y + STAGE_HEIGHT));
+                    // Clamp end points to be within target card boundaries
+                    pathX2 = Math.max(toStage.position.x, Math.min(pathX2, toStage.position.x + STAGE_WIDTH));
+                    pathY2 = Math.max(toStage.position.y, Math.min(pathY2, toStage.position.y + STAGE_HEIGHT));
 
 
-                    let ctrlX1 = pathX1 + dx * 0.3;
+                    let ctrlX1 = pathX1;
                     let ctrlY1 = pathY1;
-                    let ctrlX2 = endX - dx * 0.3;
-                    let ctrlY2 = endY;
-                    
-                    if (Math.abs(dx) < COL_SPACING * 0.5 || Math.abs(dy) < ROW_SPACING * 0.5) { // More direct connection
-                        ctrlX1 = (pathX1 + endX) / 2;
-                        ctrlY1 = (pathY1 + endY) / 2;
-                        ctrlX2 = ctrlX1;
-                        ctrlY2 = ctrlY1;
-                    } else if (Math.abs(dx) > STAGE_WIDTH && Math.abs(dy) > STAGE_HEIGHT * 0.5) { // S-curve for diagonalish
-                      ctrlY1 = pathY1 + dy * 0.4;
-                      ctrlX2 = endX - dx * 0.4;
-                    } else if (Math.abs(dy) > STAGE_HEIGHT && Math.abs(dx) > STAGE_WIDTH * 0.5) {
-                       ctrlX1 = pathX1 + dx * 0.4;
-                       ctrlY2 = endY - dy * 0.4;
-                    }
+                    let ctrlX2 = pathX2;
+                    let ctrlY2 = pathY2;
 
+                    // Straight line if stages are in the same row or same column (approximately)
+                    const isSameRow = Math.abs(y1_center - y2_center) < ROW_SPACING / 2;
+                    const isSameCol = Math.abs(x1_center - x2_center) < COL_SPACING / 2;
+                    
+                    // Specific fix for course-1, stage-1-4 to stage-1-5
+                    const isUnity4to5 = fromStage.id === 'stage-1-4' && toStage.id === 'stage-1-5';
+
+                    if (isSameRow || isSameCol || isUnity4to5) {
+                      // Use linear path (handled by M pathX1 pathY1 L pathX2 pathY2 as default for simple C)
+                      ctrlX1 = (pathX1 + pathX2) / 2;
+                      ctrlY1 = (pathY1 + pathY2) / 2;
+                      ctrlX2 = ctrlX1;
+                      ctrlY2 = ctrlY1;
+                    } else { // S-curve for diagonal connections
+                        if (Math.abs(dx) > Math.abs(dy)) { // More horizontal S-curve
+                            ctrlX1 = pathX1 + dx * 0.4;
+                            ctrlY1 = pathY1;
+                            ctrlX2 = pathX2 - dx * 0.4;
+                            ctrlY2 = pathY2;
+                        } else { // More vertical S-curve
+                            ctrlX1 = pathX1;
+                            ctrlY1 = pathY1 + dy * 0.4;
+                            ctrlX2 = pathX2;
+                            ctrlY2 = pathY2 - dy * 0.4;
+                        }
+                    }
 
                     return (
                       <g key={link.id}>
@@ -369,7 +372,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                           </marker>
                         </defs>
                         <path
-                          d={`M ${pathX1} ${pathY1} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${endX} ${endY}`}
+                          d={`M ${pathX1} ${pathY1} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${pathX2} ${pathY2}`}
                           className={cn(
                             "transition-all duration-500",
                             isFromCompleted ? "stroke-primary" : "stroke-border"
@@ -414,11 +417,12 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                       cardClass = 'border-green-500 bg-green-100 dark:bg-green-900/50 hover:shadow-lg';
                       icon = <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />;
                       statusAriaLabel = '完了';
-                    } else if (isCurrent) {
+                    } else if (isAccessible) { // Changed from isCurrent to isAccessible
                       cardClass = 'border-primary bg-primary/10 dark:bg-primary/20 hover:shadow-lg';
                       icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
                       statusAriaLabel = '学習可能';
                     }
+
 
                     if (!stage.position) return null;
 
@@ -434,7 +438,7 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
                             top: `${stage.position.y}px`,
                             width: `${STAGE_WIDTH}px`,
                             height: `${STAGE_HEIGHT}px`,
-                            zIndex: 10, // Ensure cards are above SVG lines
+                            zIndex: 10, 
                           }}
                           aria-label={`ステージ ${stage.order}: ${stage.title}. ステータス: ${statusAriaLabel}`}
                         >
@@ -494,3 +498,4 @@ export default function StageMapPage({ params: paramsFromProps }: StageMapPagePr
     </div>
   );
 }
+
