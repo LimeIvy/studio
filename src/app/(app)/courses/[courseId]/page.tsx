@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react'; // React must be imported to use React.use
+import React, { useState } from 'react'; // React.use is available on React
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCourseById, getStagesForCourse, getLinksForCourse, getProgressForStage, mockUser } from '@/lib/mock-data';
@@ -26,14 +26,21 @@ interface ResolvedPageParams {
 }
 
 // This interface describes the props Next.js passes to the page component
-interface StageMapPageProps { 
-  params: ResolvedPageParams; 
+interface StageMapPageProps {
+  // Next.js runtime error indicates `params` is a Promise.
+  // The declared type might be ResolvedPageParams for convenience,
+  // but React.use expects the actual promise.
+  params: ResolvedPageParams;
 }
 
-export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
-  const params = React.use(Promise.resolve(rawParams));
+export default function StageMapPage({ params: paramsFromProps }: StageMapPageProps) {
+  // Correctly unwrap the params. Next.js error indicates `paramsFromProps` is a Promise.
+  // Pass it directly to React.use. Using `as any` to bridge potential type mismatch
+  // if `paramsFromProps` is typed as `ResolvedPageParams` but is a Promise at runtime.
+  const params = React.use(paramsFromProps as any);
+
   const course = getCourseById(params.courseId);
-  
+
   if (!course) {
     notFound();
   }
@@ -48,24 +55,24 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
   }, {} as Record<string, Stage>);
 
   // Determine map dimensions
-  const STAGE_WIDTH = 180; 
-  const STAGE_HEIGHT = 100; 
-  const PADDING = 50; 
+  const STAGE_WIDTH = 180;
+  const STAGE_HEIGHT = 100;
+  const PADDING = 50;
 
-  const mapWidth = stages.length > 0 
+  const mapWidth = stages.length > 0
     ? Math.max(...stages.map(s => s.position.x + STAGE_WIDTH)) + PADDING
     : PADDING * 2;
   const mapHeight = stages.length > 0
-    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING * 2 
+    ? Math.max(...stages.map(s => s.position.y + STAGE_HEIGHT)) + PADDING * 2
     : PADDING * 2;
-  
+
   // Logic for the main "Start/Continue Learning" button
   const allStagesCompleted = stages.every(s => !!getProgressForStage(mockUser.id, s.id));
-  
+
   let currentActiveStagesInfo = stages.map(stage => {
     const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
     let isAccessible = false;
-    if (stage.order === 1) { 
+    if (stage.order === 1) {
         isAccessible = true;
     } else {
         const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
@@ -83,18 +90,19 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
   let buttonText = "Start Learning";
 
   if (allStagesCompleted && stages.length > 0) {
-    buttonTargetStageId = stages[0].id; 
+    buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id; // Ensure we get the first stage by order
     buttonText = "Review First Stage";
   } else if (currentActiveStagesInfo.length > 0) {
     buttonTargetStageId = currentActiveStagesInfo[0].id;
-    const firstActiveStage = currentActiveStagesInfo[0]; 
-    const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id)); 
+    const firstActiveStage = currentActiveStagesInfo[0];
+    const userHasStartedCourse = stages.some(s => !!getProgressForStage(mockUser.id, s.id));
     buttonText = (firstActiveStage.order === 1 && !firstActiveStage.isCompleted && !userHasStartedCourse)
-                  ? "Start Learning" 
+                  ? "Start Learning"
                   : "Continue Learning";
-  } else if (stages.length > 0) { 
-    buttonTargetStageId = stages[0].id; 
-    buttonText = "Review Course";
+  } else if (stages.length > 0) {
+    // If no active stages but course not complete, could mean user jumped or data error. Default to first stage.
+    buttonTargetStageId = stages.sort((a,b) => a.order - b.order)[0].id; // Ensure we get the first stage by order
+    buttonText = "Review Course"; // Or "Start Course" if no progress at all
   }
 
 
@@ -106,8 +114,8 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
 
   if (selectedStageForModal) {
       modalStageIsCompleted = !!getProgressForStage(mockUser.id, selectedStageForModal.id);
-      
-      if (selectedStageForModal.order === 1) { 
+
+      if (selectedStageForModal.order === 1) {
           modalStageIsAccessible = true;
       } else {
           const incomingLinksToModalStage = links.filter(l => l.to_stage_id === selectedStageForModal!.id);
@@ -123,7 +131,7 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
           modalButtonText = modalStageIsCompleted ? "Review Stage" : "Start Stage";
           modalButtonDisabled = false;
       } else {
-          modalButtonText = "Stage Locked"; 
+          modalButtonText = "Stage Locked";
           modalButtonDisabled = true;
       }
   }
@@ -157,13 +165,13 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
             Course Map
           </h2>
           {stages.length > 0 ? (
-            <div 
-              className="relative rounded-lg border bg-card p-4 shadow-sm overflow-auto" 
+            <div
+              className="relative rounded-lg border bg-card p-4 shadow-sm overflow-auto"
               style={{ width: `${mapWidth}px`, height: `${mapHeight}px` }}
             >
-              <svg 
-                width={mapWidth} 
-                height={mapHeight} 
+              <svg
+                width={mapWidth}
+                height={mapHeight}
                 className="absolute top-0 left-0 pointer-events-none"
                 aria-hidden="true"
               >
@@ -173,7 +181,7 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
                   if (!fromStage || !toStage || !fromStage.position || !toStage.position) return null;
 
                   const isFromCompleted = !!getProgressForStage(mockUser.id, fromStage.id);
-                  
+
                   const x1 = fromStage.position.x + STAGE_WIDTH / 2;
                   const y1 = fromStage.position.y + STAGE_HEIGHT / 2;
                   const x2 = toStage.position.x + STAGE_WIDTH / 2;
@@ -199,14 +207,14 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
                        <defs>
                         <marker
                           id={arrowId}
-                          markerWidth={markerSize * 1.5} 
+                          markerWidth={markerSize * 1.5}
                           markerHeight={markerSize * 1.5}
-                          refX={markerSize * 0.75} 
+                          refX={markerSize * 0.75}
                           refY={markerSize * 0.75}
                           orient="auto"
                           markerUnits="userSpaceOnUse" // Ensures consistent sizing
                         >
-                          <path d={`M0,0 L0,${markerSize} L${markerSize * 0.75},${markerSize/2} Z`} 
+                          <path d={`M0,0 L0,${markerSize} L${markerSize * 0.75},${markerSize/2} Z`}
                                 className={cn(isFromCompleted ? "fill-primary" : "fill-border")} />
                         </marker>
                       </defs>
@@ -214,11 +222,11 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
                         d={`M${x1},${y1} Q${ctrlX},${ctrlY} ${x2},${y2}`}
                         className={cn(
                           "transition-all duration-500",
-                          isFromCompleted ? "stroke-primary" : "stroke-border" 
+                          isFromCompleted ? "stroke-primary" : "stroke-border"
                         )}
                         strokeWidth="2.5"
                         fill="none"
-                        strokeDasharray={isFromCompleted ? "none" : "5,5"} 
+                        strokeDasharray={isFromCompleted ? "none" : "5,5"}
                         markerEnd={`url(#${arrowId})`}
                       />
                     </g>
@@ -228,7 +236,7 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
 
               {stages.map(stage => {
                 const isCompleted = !!getProgressForStage(mockUser.id, stage.id);
-                let isAccessible = stage.order === 1; 
+                let isAccessible = stage.order === 1;
                 if (!isAccessible) {
                   const incomingLinks = links.filter(l => l.to_stage_id === stage.id);
                   for (const link of incomingLinks) {
@@ -241,7 +249,7 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
                 const isCurrent = isAccessible && !isCompleted;
 
                 let cardClass = 'bg-card hover:shadow-md';
-                let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />; 
+                let icon = <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />;
 
                 if (isCompleted) {
                   cardClass = 'bg-green-100 dark:bg-green-800/70 border-green-500 hover:shadow-lg';
@@ -249,10 +257,10 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
                 } else if (isCurrent) {
                   cardClass = 'bg-blue-100 dark:bg-blue-800/70 border-primary hover:shadow-lg animate-pulse-slow';
                   icon = <ArrowRightCircle className="h-5 w-5 text-primary flex-shrink-0" />;
-                } else { 
-                  cardClass = 'bg-muted border-border'; // Removed hover effect for locked, non-transparent
+                } else {
+                  cardClass = 'bg-muted border-border';
                 }
-                
+
                 if (!stage.position) return null;
 
                 return (
@@ -267,7 +275,7 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
                         top: `${stage.position.y}px`,
                         width: `${STAGE_WIDTH}px`,
                         height: `${STAGE_HEIGHT}px`,
-                        zIndex: 10, 
+                        zIndex: 10,
                       }}
                       aria-label={`Stage ${stage.order}: ${stage.title}. Status: ${isCompleted ? 'Completed' : isCurrent ? 'Current' : 'Locked'}`}
                     >
@@ -292,8 +300,8 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
             <DialogHeader>
               <DialogTitle className="text-2xl">Stage {selectedStageForModal.order}: {selectedStageForModal.title}</DialogTitle>
               <div className="text-sm text-muted-foreground pt-1">
-                {modalStageIsCompleted ? (
-                    <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">Completed</Badge>
+                 {modalStageIsCompleted ? (
+                    <Badge variant="default" className="bg-green-600 hover:bg-green-700">Completed</Badge>
                 ) : modalStageIsAccessible ? (
                     <Badge variant="default" className="bg-primary hover:bg-primary/90">Current</Badge>
                 ) : (
@@ -319,4 +327,3 @@ export default function StageMapPage({ params: rawParams }: StageMapPageProps) {
     </div>
   );
 }
-
